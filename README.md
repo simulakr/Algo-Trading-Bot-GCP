@@ -17,7 +17,7 @@ Bu proje, Binance API üzerinden kripto fiyat verilerini çekerek Bollinger Band
 
 ## ⚙️ Kurulum
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt```
 
 # Target Structure
 
