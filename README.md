@@ -15,9 +15,7 @@ Bu proje, Binance API üzerinden kripto fiyat verilerini çekerek Bollinger Band
 ## 🛠️ Kullanılan Teknolojiler
 - Python, ccxt, pandas, numpy, matplotlib, seaborn
 
-## ⚙️ Kurulum
-```bash
-pip install -r requirements.txt```
+
 
 # Target Structure
 
@@ -44,3 +42,9 @@ Algo_Bollinger_Backtest/
 ├── README.md            # Proje açıklaması (amaç, veri kaynağı, sonuçlar)
 ├── LICENSE              # (MIT veya GPL)
 └── .gitignore           # .ipynb_checkpoints, .DS_Store vs.
+
+
+## ⚙️ Kurulum
+```bash
+pip install -r requirements.txt
+```
