@@ -1,11 +1,10 @@
 import numpy as np
 import pandas as pd
 
-""" Relative Strength Index (RSI)"""
 
 def calculate_rsi(price_data, window=14, price_col='close'):
     """
-    Correct RSI calculation.
+    RELATIVE STRENGTH INDEX (RSI) CALCULATOR
     """
     delta = price_data[price_col].diff()
     gain = delta.where(delta > 0, 0)
@@ -19,10 +18,10 @@ def calculate_rsi(price_data, window=14, price_col='close'):
 
     return rsi
 
-""" Categorical RSI  """
 
 def categorize_rsi(rsi_series):
     """
+    Categorical RSI
     Categorize RSI values into bins:
     0-30, 30-50, 50-70, 70-100
 
@@ -36,7 +35,6 @@ def categorize_rsi(rsi_series):
     labels = ['oversold', 'below_avg', 'above_avg', 'overbought']
     return pd.cut(rsi_series, bins=bins, labels=labels, include_lowest=True)
 
-""" Average True Range (ATR)"""
 
 def calculate_atr(price_data, window=14):
     """
@@ -65,7 +63,6 @@ def calculate_atr(price_data, window=14):
 
     return atr
 
-""" Bollinger Bands"""
 
 def calculate_bollinger_bands(price_data, window=20, std_multiplier=2, price_col='close'):
     """
@@ -101,7 +98,6 @@ def calculate_bollinger_bands(price_data, window=20, std_multiplier=2, price_col
 
     return bb
 
-""" Donchain Channels"""
 
 #USE 20, 50 OR 55
 
@@ -128,7 +124,6 @@ def calculate_donchian_channel(price_data, window=20):
 
     return dc
 
-""" Simple Moving Average - SMA"""
 
 # USE 13, 50, 100 OR 200
 
@@ -147,7 +142,6 @@ def calculate_sma(price_data, window=50, price_col='close'):
     sma = price_data[price_col].rolling(window=window).mean()
     return sma
 
-""" Trend"""
 
 def determine_sma_trend(price_data, short_window=13, long_window=50, price_col='close'):
     """
@@ -169,7 +163,6 @@ def determine_sma_trend(price_data, short_window=13, long_window=50, price_col='
 
     return pd.Series(trend, index=price_data.index)
 
-""" Nadaraya Watson Envelope"""
 
 def calculate_nadaraya_watson_envelope(price_data, window=20, bandwidth=3, deviation_window=20, deviation_multiplier=1.0, price_col='close'):
     """
@@ -215,7 +208,6 @@ def calculate_nadaraya_watson_envelope(price_data, window=20, bandwidth=3, devia
 
     return bands
 
-""" Supertrend"""
 
 def calculate_supertrend(price_data, atr_period=10, multiplier=3):
     """
