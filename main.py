@@ -1,9 +1,8 @@
-# main.py
 import time
 import logging
 from typing import Dict, Optional
 from config import SYMBOLS, INTERVAL, LEVERAGE
-from exchange import BinanceFuturesAPI
+from exchange import BybitFuturesAPI  # Değişti
 from indicators import calculate_indicators
 from signals import generate_signals
 from entry_strategies import check_long_entry, check_short_entry
@@ -22,30 +21,29 @@ logger = logging.getLogger(__name__)
 
 class TradingBot:
     def __init__(self, testnet: bool = False):
-        self.api = BinanceFuturesAPI(testnet=testnet)
-        self.position_manager = PositionManager(self.api.client)
+        self.api = BybitFuturesAPI(testnet=testnet)  # Değişti
+        self.position_manager = PositionManager(self.api.session)  # client -> session
         self.symbols = SYMBOLS
         self.interval = INTERVAL
         self._initialize_account()
 
     def _initialize_account(self):
-        """Hesap ayarlarını yapılandır"""
+        """ByBit için hesap ayarlarını yapılandır"""
         try:
             for symbol in self.symbols:
-                self.api.client.futures_change_leverage(
+                # ByBit'te leverage ve margin type ayarları
+                self.api.session.set_leverage(
+                    category="linear",
                     symbol=symbol,
-                    leverage=LEVERAGE
-                )
-                self.api.client.futures_change_margin_type(
-                    symbol=symbol,
-                    marginType='ISOLATED'
+                    buyLeverage=str(LEVERAGE),
+                    sellLeverage=str(LEVERAGE)
                 )
             logger.info(f"Hesap ayarları tamamlandı | Kaldıraç: {LEVERAGE}x")
         except Exception as e:
             logger.error(f"Hesap ayarlama hatası: {str(e)}")
 
     def _get_market_data(self, symbol: str) -> Optional[Dict]:
-        """Tek sembol için veri işleme pipeline'ı"""
+        """Veri işleme pipeline'ı (Değişiklik yok)"""
         try:
             df = self.api.get_ohlcv(symbol, self.interval)
             if df is None or df.empty:
@@ -59,7 +57,7 @@ class TradingBot:
             return None
 
     def _generate_signals(self) -> Dict[str, Optional[str]]:
-        """Tüm semboller için sinyal oluştur"""
+        """Sinyal oluşturma (Değişiklik yok)"""
         signals = {}
         for symbol in self.symbols:
             data = self._get_market_data(symbol)
@@ -76,7 +74,7 @@ class TradingBot:
         return signals
 
     def _execute_trades(self, signals: Dict[str, Optional[str]]):
-        """Sinyalleri işle ve pozisyon aç/kapa"""
+        """İşlem yürütme (Değişiklik yok)"""
         for symbol, signal in signals.items():
             if not signal:
                 continue
@@ -85,38 +83,29 @@ class TradingBot:
             if not data:
                 continue
 
-            # Mevcut pozisyon kontrolü
             if self.position_manager.has_active_position(symbol):
                 continue
 
-            # Yeni pozisyon aç
             self.position_manager.open_position(
                 symbol=symbol,
                 direction=signal,
                 entry_price=data['close'],
-                atr=data['pct_atr']
+                pct_atr=data['pct_atr']  # atr -> pct_atr olarak güncellendi
             )
 
     def run(self):
-        """Ana çalıştırma döngüsü"""
+        """Ana çalıştırma döngüsü (Değişiklik yok)"""
         logger.info(f"Bot başlatıldı | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}")
 
         while True:
             try:
                 start_time = time.time()
-
-                # 1. Sinyal oluştur
                 signals = self._generate_signals()
-
-                # 2. Pozisyonları yönet
                 self.position_manager.manage_positions(signals)
-
-                # 3. Yeni işlemleri aç
                 self._execute_trades(signals)
 
-                # 4. Cycle süresi kontrolü
                 elapsed = time.time() - start_time
-                sleep_time = max(60 - elapsed, 5)  # En az 5 sn bekle
+                sleep_time = max(60 - elapsed, 5)
                 time.sleep(sleep_time)
 
             except KeyboardInterrupt:
@@ -127,6 +116,5 @@ class TradingBot:
                 time.sleep(60)
 
 if __name__ == "__main__":
-    # Testnet modunda çalıştır (prodüksiyonda False yapın)
-    bot = TradingBot(testnet=True)
+    bot = TradingBot(testnet=True)  # Prodüksiyonda False yapın
     bot.run()
