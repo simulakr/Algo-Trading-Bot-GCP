@@ -1,4 +1,4 @@
-binance-connector==2.0.0
+pybit
 python-dotenv==1.0.0
 pandas==2.0.3
 numpy==1.24.3
