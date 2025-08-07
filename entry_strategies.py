@@ -1,7 +1,6 @@
-# entry_strategies.py
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
-# Sembol bazlı ATR aralıkları
+# Sembol bazlı ATR aralıkları (ByBit için de aynı kalabilir)
 SYMBOL_ATR_RANGES = {
     'SOLUSDT': {
         'long': (0.44, 0.84),
@@ -22,12 +21,12 @@ VALID_CANDLE_TYPES = {
     'short': ['weak_bullish', 'weak_bearish', 'medium_bearish', 'strong_bearish']
 }
 
-def _get_atr_range(symbol: str, direction: str) -> tuple:
-    """Sembole ve yöne göre ATR aralığını döndürür"""
+def _get_atr_range(symbol: str, direction: str) -> Tuple[float, float]:
+    """Sembole ve yöne göre ATR aralığını döndürür (ByBit için değişiklik yok)"""
     return SYMBOL_ATR_RANGES.get(symbol, {}).get(direction, (0, 0))
 
 def check_long_entry(row: Dict[str, Any], symbol: str) -> bool:
-    """Long giriş koşullarını kontrol eder"""
+    """Long giriş koşullarını kontrol eder (ByBit için değişiklik yok)"""
     min_pct_atr, max_pct_atr = _get_atr_range(symbol, 'long')
 
     conditions = (
@@ -46,7 +45,7 @@ def check_long_entry(row: Dict[str, Any], symbol: str) -> bool:
     return conditions
 
 def check_short_entry(row: Dict[str, Any], symbol: str) -> bool:
-    """Short giriş koşullarını kontrol eder"""
+    """Short giriş koşullarını kontrol eder (ByBit için değişiklik yok)"""
     min_pct_atr, max_pct_atr = _get_atr_range(symbol, 'short')
 
     conditions = (
