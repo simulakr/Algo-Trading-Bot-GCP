@@ -1,6 +1,6 @@
 # Algo-Trading-Backtest
 
-# 📈 Algo Trading Backtest — Bollinger Band Strategy
+# 📈 Algo Trading Backtest — BB, DC, MA and NW Strategies
 
 ## 🎯 Amaç
 Bu proje, Binance API üzerinden kripto fiyat verilerini çekerek Bollinger Band temelli bir strateji kurar ve geçmiş performansını test eder.
