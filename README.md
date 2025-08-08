@@ -1,50 +1,67 @@
-# Algo-Trading-Backtest
-
 # 📈 Algo Trading Backtest — BB, DC, MA and NW Strategies
 
-## 🎯 Amaç
-Bu proje, Binance API üzerinden kripto fiyat verilerini çekerek Bollinger Band temelli bir strateji kurar ve geçmiş performansını test eder.
+[GitHub Repo](https://github.com/simulakr/Algo-Trading-Bot-GCP)
 
-## 🧩 Adımlar
-1. 📡 **Veri Çekimi:** Binance API üzerinden 15m, 1h, 4h, 1D OHLCV veri.
-2. 🧮 **İndikatörler:** Bollinger Band, ATR, ADX hesaplama.
-3. 📊 **Strateji:** BB üzerine/altına 3 defa değme kuralı, trend filtresi.
-4. 🔁 **Backtest:** Kümülatif PnL, Win Rate, Sharpe Ratio, Drawdown.
-5. 📈 **Görselleştirme:** Trade giriş-çıkış noktaları ve equity curve.
+## About the Project
 
-## 🛠️ Kullanılan Teknolojiler
-- Python, ccxt, pandas, numpy, matplotlib, seaborn
+**Algo Trading Backtest** is a Python-based automated trading bot developed to test and evaluate algorithmic trading strategies running on Google Cloud Platform (GCP). The project implements popular technical analysis strategies such as Bollinger Bands (BB), Donchian Channels (DC), Moving Averages (MA), and Nadaraya-Watson (NW), and performs backtesting processes.
 
+## Features
 
-## ⚙️ Kurulum
+* **Strategies:** Bollinger Bands, Donchian Channels, Moving Averages, Nadaraya-Watson
+* **Backtesting:** Simulate strategy performance on historical data
+* **Modular Design:** Strategy, signal, position management, and exchange operations in separate modules
+* **Google Cloud Platform (GCP) Compatible:** Cloud deployment ready
+* **Pip Requirements:** Project dependencies are listed in requirements.txt file
+
+## File Structure
+
+* `config.py` — Project general configurations
+* `entry_strategies.py` — Entry strategy definitions
+* `exit_strategies.py` — Exit strategy definitions
+* `indicators.py` — Technical indicator calculations
+* `signals.py` — Buy/Sell signal generation
+* `position_manager.py` — Position management and risk control
+* `exchange.py` — Exchange API integrations and order execution
+* `main.py` — Main execution file, integrates all modules
+* `.env` — Environment variables
+* `requirements.txt` — Project Python dependencies
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/simulakr/Algo-Trading-Bot-GCP.git
+cd Algo-Trading-Bot-GCP
+```
+
+2. Create and activate a virtual environment (optional but recommended):
+
+```bash
+python -m venv venv
+source venv/bin/activate # Linux / macOS
+venv\Scripts\activate # Windows
+```
+
+3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
+```
 
---Target Structure--
+4. Place the `.env` file in the project root directory and add API keys and other required information.
 
-Algo_Bollinger_Backtest/
-│
-├── data/
-│   └── raw/           # Orijinal çekilen CSV veya pickle dosyaları
-│   └── processed/     # Temizlenmiş & birleşmiş dataset
-│
-├── notebooks/
-│   └── 01_fetch_data.ipynb   # Binance API ile veri çekimi
-│   └── 02_indicators.ipynb   # BB, ATR, ADX hesaplama
-│   └── 03_strategy.ipynb     # Strateji kuralları ve sinyal üretimi
-│   └── 04_backtest.ipynb     # Backtest + performans metrikleri
-│   └── 05_visualize.ipynb    # Sonuç grafikleri, equity curve
-│
-├── src/
-│   ├── data_loader.py   # API veri çekme fonksiyonu
-│   ├── indicators.py    # BB, ATR, ADX hesaplama fonksiyonları
-│   ├── strategy.py      # Sinyal üretim kuralları
-│   ├── backtester.py    # Backtest fonksiyonları
-│
-├── requirements.txt     # Gerekli paketler (ccxt, pandas, matplotlib vs)
-├── README.md            # Proje açıklaması (amaç, veri kaynağı, sonuçlar)
-├── LICENSE              # (MIT veya GPL)
-└── .gitignore           # .ipynb_checkpoints, .DS_Store vs.
+## Usage
 
+You can start the bot by running the `main.py` file:
 
+```bash
+python main.py
+```
 
+The bot will generate entry and exit signals according to configured strategies, manage positions, and report simulation results.
+
+## Contributing
+
+We welcome your contributions! You can open pull requests for new strategies, bug fixes, or improvements.
