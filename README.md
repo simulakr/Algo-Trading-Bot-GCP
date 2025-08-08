@@ -1,7 +1,5 @@
 # 📈 Algo Trading Backtest — BB, DC, MA and NW Strategies
 
-[GitHub Repo](https://github.com/simulakr/Algo-Trading-Bot-GCP)
-
 ## About the Project
 
 **Algo Trading Backtest** is a Python-based automated trading bot developed to test and evaluate algorithmic trading strategies running on Google Cloud Platform (GCP). The project implements popular technical analysis strategies such as Bollinger Bands (BB), Donchian Channels (DC), Moving Averages (MA), and Nadaraya-Watson (NW), and performs backtesting processes.
