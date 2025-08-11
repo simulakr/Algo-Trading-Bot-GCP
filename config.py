@@ -8,8 +8,8 @@ SYMBOLS = ["SUIUSDT", "ETHUSDT", "SOLUSDT"]  # ByBit'te mevcut çiftler
 INTERVAL = "15"  # ByBit formatında (15m için '15', 1h için '60')
 
 # Risk Yönetimi
-RISK_PER_TRADE_USDT = 10.0  # Her işlemde sabit 10 USDT risk
-LEVERAGE = 25  # Daha güvenli başlangıç kaldıracı (ByBit'te max 25x genelde)
+RISK_PER_TRADE_USDT = 5.0  # Her işlemde sabit 10 USDT risk
+LEVERAGE = 10  # Daha güvenli başlangıç kaldıracı (ByBit'te max 25x genelde)
 
 # ByBit API Ayarları
 BYBIT_API_KEY = os.getenv("BYBIT_API_KEY")
