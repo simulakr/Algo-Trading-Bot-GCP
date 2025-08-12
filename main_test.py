@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 # Test fonksiyonu
 def test_bybit_operations():
-    api = BybitFuturesAPI(testnet=True)
+    api = BybitFuturesAPI(testnet=False)
     pm = PositionManager(api.session)
     
     # 1. Veri çekme testi
