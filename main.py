@@ -116,5 +116,5 @@ class TradingBot:
                 time.sleep(60)
 
 if __name__ == "__main__":
-    bot = TradingBot(testnet=True)  # Prodüksiyonda False yapın
+    bot = TradingBot(testnet=false)  # Changing Area
     bot.run()
