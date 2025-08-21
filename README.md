@@ -1,4 +1,4 @@
-# 📈 Algo Trading Backtest — BB, DC, MA and NW Strategies
+# 📈 Algo Trading Bot (Google Cloud Virtual Machine) — BB, DC, MA and NW Strategies
 
 ## About the Project
 
