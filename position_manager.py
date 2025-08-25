@@ -32,8 +32,9 @@ class PositionManager:
                 symbol=symbol,
                 side="Buy" if direction == "LONG" else "Sell",
                 orderType="Market",
-                qty=str(quantity),
-                positionIdx=1 if direction == "LONG" else 2,  # 1: Long, 2: Short
+                qty='0',  # 🟢 KRİTİK: qty=0 olmalı
+                orderValue=str(risk_amount),  # 🟢 USDT cinsinden miktar (örn: '10')
+                positionIdx=1 if direction == "LONG" else 2,
                 reduceOnly=False
             )
 
@@ -61,12 +62,9 @@ class PositionManager:
             self.logger.error(f"{symbol} pozisyon açma hatası: {str(e)}")
             return None
 
-    def _calculate_position_size(self, entry_price: float, pct_atr: float, direction: str) -> float:
-        """Binance versiyonuyla aynı kalabilir"""
-        stop_pct = pct_atr * (1 if direction == 'LONG' else 2)
-        risk_amount = RISK_PER_TRADE_USDT * LEVERAGE
-        quantity = (risk_amount) / (entry_price * (stop_pct / 100))
-        return round(quantity, 3)
+    def _calculate_position_size(self, entry_price: float, pct_atr: float, direction: str) -> str:
+        """Sadece sabit risk miktarını döndürür"""
+        return str(RISK_PER_TRADE_USDT)
 
     def close_position(self, symbol: str, reason: str = "MANUAL_CLOSE") -> bool:
         """Aktif pozisyonu kapatır (ByBit)"""
