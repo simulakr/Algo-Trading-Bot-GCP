@@ -51,8 +51,8 @@ class ExitStrategy:
                 positionIdx=1 if position['direction'] == "LONG" else 2,
                 takeProfit=str(new_tp),
                 stopLoss=str(new_sl),
-                tpTriggerBy="MarkPrice" if position['direction'] == "LONG" else "LastPrice",
-                slTriggerBy="MarkPrice" if position['direction'] == "LONG" else "LastPrice",
+                tpTriggerBy="LastPrice",
+                slTriggerBy="MarkPrice",
                 tpLimitPrice=str(new_tp),  # Limit fiyatı TP için
                 slOrderType="Market"  # SL her zaman marketle
             )
