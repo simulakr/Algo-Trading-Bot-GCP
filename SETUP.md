@@ -59,3 +59,6 @@ sudo systemctl enable tradingbot
 
 # 11) Logları Kontrol Et
 sudo journalctl -u tradingbot -f
+
+# 12) .env dosyasını koruma
+chmod 600 .env
