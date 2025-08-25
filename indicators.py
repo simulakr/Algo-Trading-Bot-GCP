@@ -183,7 +183,7 @@ def clean_signals(signal_series, window=10):
     return signal_series & (signal_series.shift(1).rolling(window=window).sum() == 0)
 
 # --- Toplu Hesaplama ---
-def calculate_indicators(df):
+def calculate_indicators(df, symbol):
     df['rsi'] = calculate_rsi(df)
     df['atr'] = calculate_atr(df)
 
