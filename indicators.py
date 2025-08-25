@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from config import atr_ranges
 
 # --- RSI ---
 def calculate_rsi(price_data, window=14, price_col='close'):
