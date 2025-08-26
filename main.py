@@ -28,7 +28,7 @@ class TradingBot:
         self._initialize_account()
 
     def _initialize_account(self):
-    """ByBit için hesap ayarlarını yapılandır"""
+        """ByBit için hesap ayarlarını yapılandır"""
         for symbol in self.symbols:
             try:
                 self.api.session.set_leverage(
