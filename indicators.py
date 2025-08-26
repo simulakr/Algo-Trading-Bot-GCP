@@ -231,11 +231,11 @@ def calculate_indicators(df, symbol):
     df.loc[(df['dc_breakout_clean_50']) & (df['dc_position_ratio_20'] > 60) & (df['rsi'] > 50) & (df['close'] > df['nw']) &
            (df['close'] < df['nw_upper']) & (df['close'] > df['bb_middle']) & (df['adx'] > 25) & (df['adx'] < 60) & 
             (df['candle_class'].isin(['weak_bearish', 'weak_bullish', 'medium_bullish', 'strong_bullish'])) & 
-             (atr_ranges[symbol][0] < df['pct_atr'] < atr_ranges[symbol][1]), 'dc_order'] = 'long'
+             (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr']) < atr_ranges[symbol][1]), 'dc_order'] = 'long'
     
     df.loc[(df['dc_breakdown_clean_50']) & (df['dc_position_ratio_20'] < 40) & (df['rsi'] < 50) & (df['close'] < df['nw']) &
            (df['close'] > df['nw_lower']) & (df['close'] < df['bb_middle']) & (df['adx'] > 25) & (df['adx'] < 60) & 
             (df['candle_class'].isin(['weak_bullish', 'weak_bearish', 'medium_bearish', 'strong_bearish'])) & 
-             (atr_ranges[symbol][0] < df['pct_atr'] < atr_ranges[symbol][1]), 'dc_order'] = 'short'   
+             (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr']) < atr_ranges[symbol][1]), 'dc_order'] = 'short'   
              
     return df
