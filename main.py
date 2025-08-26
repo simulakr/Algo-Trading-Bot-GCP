@@ -28,18 +28,21 @@ class TradingBot:
         self._initialize_account()
 
     def _initialize_account(self):
-        """ByBit için hesap ayarlarını yapılandır"""
-        try:
-            for symbol in self.symbols:
+    """ByBit için hesap ayarlarını yapılandır"""
+        for symbol in self.symbols:
+            try:
                 self.api.session.set_leverage(
-                    category="linear",
-                    symbol=symbol,
-                    buyLeverage=str(LEVERAGE),
-                    sellLeverage=str(LEVERAGE)
+                category="linear",
+                symbol=symbol,
+                buyLeverage=str(LEVERAGE),
+                sellLeverage=str(LEVERAGE)
                 )
-            logger.info(f"Hesap ayarları tamamlandı | Kaldıraç: {LEVERAGE}x")
-        except Exception as e:
-            logger.error(f"Hesap ayarlama hatası: {str(e)}")
+                logger.info(f"{symbol} kaldıraç ayarlandı: {LEVERAGE}x")
+            except Exception as e:
+                if "leverage not modified" in str(e):
+                    logger.debug(f"{symbol} kaldıraç zaten {LEVERAGE}x olarak ayarlı")
+                else:
+                    logger.warning(f"{symbol} kaldıraç ayarlama uyarısı: {str(e)}")
 
     def _wait_until_next_candle(self):
         """15 dakikalık mum sonuna kadar bekler"""
