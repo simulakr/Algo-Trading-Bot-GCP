@@ -49,7 +49,7 @@ class BybitFuturesAPI:  # Sınıf adı değişti
             ])
 
             df = df[['time', 'open', 'high', 'low', 'close', 'volume']].copy()
-            df['time'] = pd.to_datetime(df['time'], unit='ms')
+            df['time'] = pd.to_datetime(df['time'].astype(int), unit='ms')
             
             if convert_to_float:
                 df[['open', 'high', 'low', 'close', 'volume']] = df[
