@@ -32,8 +32,7 @@ class PositionManager:
                 symbol=symbol,
                 side="Buy" if direction == "LONG" else "Sell",
                 orderType="Market",
-                qty='0',  # 🟢 KRİTİK: qty=0 olmalı
-                orderValue=str(risk_amount),  # 🟢 USDT cinsinden miktar (örn: '10')
+                qty=quantity, 
                 positionIdx=1 if direction == "LONG" else 2,
                 reduceOnly=False
             )
