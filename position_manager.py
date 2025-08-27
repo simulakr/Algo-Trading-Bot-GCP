@@ -2,7 +2,7 @@ from typing import Dict, Optional, Any
 from pybit.unified_trading import HTTP
 from exit_strategies import ExitStrategy
 import logging
-from config import LEVERAGE, RISK_PER_TRADE_USDT
+from config import LEVERAGE, RISK_PER_TRADE_USDT, ROUND_NUMBERS
 
 class PositionManager:
     def __init__(self, client: HTTP):
@@ -62,9 +62,11 @@ class PositionManager:
             self.logger.error(f"{symbol} pozisyon açma hatası: {str(e)}")
             return None
 
-    def _calculate_position_size(self, entry_price: float, pct_atr: float, direction: str) -> str:
-        """Sadece sabit risk miktarını döndürür"""
-        return str(RISK_PER_TRADE_USDT)
+    def _calculate_position_size(self, symbol: str, entry_price: float) -> str:
+        """Sabit risk miktarına göre her sembol için quantity döndürür"""
+        raw_quantity = RISK_PER_TRADE_USDT * LEVERAGE / entry_price
+        quantity = round(raw_quantity, ROUND_NUMBERS[symbol])
+        return str(quantity)
 
     def close_position(self, symbol: str, reason: str = "MANUAL_CLOSE") -> bool:
         """Aktif pozisyonu kapatır (ByBit)"""
