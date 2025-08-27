@@ -16,6 +16,20 @@ atr_ranges = {'SOLUSDT':  (0.44, 0.84),
               '1000PEPEUSDT':  (0.74, 1.3),
               'SUIUSDT': (0.61, 1.13)}
 
+# Quantity Hesabı İçin Ondalık Sayıları
+ROUND_NUMBERS = {
+    'BTCUSDT': 3,
+    'ETHUSDT': 2,
+    'BNBUSDT': 2,
+    'SOLUSDT': 1,
+    '1000PEPEUSDT': -2,
+    'ARBUSDT': 1,
+    'SUIUSDT': -1,
+    'DOGEUSDT': 0,
+    'XRPUSDT': 0,
+    'OPUSDT': 1,
+}
+
 # Risk Yönetimi
 RISK_PER_TRADE_USDT = 5.0  # Her işlemde sabit 10 USDT risk
 LEVERAGE = 10  # Daha güvenli başlangıç kaldıracı (ByBit'te max 25x genelde)
