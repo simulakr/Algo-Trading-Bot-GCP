@@ -24,7 +24,7 @@ class PositionManager:
         """
         try:
             # Pozisyon büyüklüğünü hesapla
-            quantity = self._calculate_position_size(entry_price, pct_atr, direction)
+            quantity = self._calculate_position_size(symbol, entry_price)
 
             # Market emri ile pozisyon aç
             order = self.client.place_order(
