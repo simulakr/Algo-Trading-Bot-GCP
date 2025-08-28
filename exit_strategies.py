@@ -94,6 +94,24 @@ class ExitStrategy:
             self.logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
             return False
 
+    def set_take_profit_stop_loss(self, symbol: str, direction: str, quantity: float, take_profit: float, stop_loss: float) -> bool:
+        """TP ve SL emirlerini ayrıca gönder"""
+        try:
+            order = self.client.set_trading_stop(
+                category="linear",
+                symbol=symbol,
+                side="Buy" if direction == "LONG" else "Sell",
+                takeProfit=str(take_profit),
+                stopLoss=str(stop_loss),
+                tpTriggerBy="MarkPrice",
+                slTriggerBy="MarkPrice",
+                positionIdx=0  # One-Way modunda 0 kullan
+            )
+            return order['retCode'] == 0
+        except Exception as e:
+            self.logger.error(f"{symbol} TP/SL ayarlama hatası: {str(e)}")
+            return False
+    
     def _check_price_hit(self, position: Dict[str, Any]) -> bool:
         """ByBit'te fiyat kontrolü"""
         try:
