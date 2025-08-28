@@ -45,12 +45,25 @@ class TradingBot:
                     logger.warning(f"{symbol} kaldıraç ayarlama uyarısı: {str(e)}")
 
     def _wait_until_next_candle(self):
-        """15 dakikalık mum sonuna kadar bekler"""
-        now = datetime.datetime.now()
-        next_candle = now.replace(second=0, microsecond=0) + datetime.timedelta(minutes=15)
-        wait_seconds = (next_candle - now).total_seconds() + 2  # 2 saniye buffer
-        time.sleep(max(wait_seconds, 1))
-        logger.info("Yeni mum başladı - Veriler çekiliyor...")
+        """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle"""
+        try:
+            # Bybit sunucu zamanını al
+            server_time = self.api.session.get_server_time()
+            ts = server_time['result']['timeSecond'] * 1000  # Unix timestamp milisaniye
+        
+            # Bybit zamanına göre next candle hesapla
+            next_candle_ts = ((ts // 900000) + 1) * 900000  # 15 dakika = 900000 ms
+            wait_ms = next_candle_ts - ts + 2000  # 2 saniye buffer
+        
+            time.sleep(max(wait_ms / 1000, 1))
+            logger.info("Yeni mum başladı - Veriler çekiliyor...")
+        
+        except Exception as e:
+            # Fallback: local zaman
+            now = datetime.datetime.now()
+            next_candle = now.replace(second=0, microsecond=0) + datetime.timedelta(minutes=15)
+            wait_seconds = (next_candle - now).total_seconds() + 2
+            time.sleep(max(wait_seconds, 1))
 
     def _get_market_data_batch(self) -> Dict[str, Optional[Dict]]:
         """Tüm sembollerin verilerini tek seferde al"""
