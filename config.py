@@ -30,8 +30,21 @@ ROUND_NUMBERS = {
     'OPUSDT': 1,
 }
 
+TP_ROUND_NUMBERS = {
+    'BTCUSDT': 2,
+    'ETHUSDT': 2,
+    'BNBUSDT': 2,
+    'SOLUSDT': 3,
+    '1000PEPEUSDT': 7,
+    'ARBUSDT': 4,
+    'SUIUSDT': 5,
+    'DOGEUSDT': 5,
+    'XRPUSDT': 4,
+    'OPUSDT': 4,
+}
+
 # Risk Yönetimi
-RISK_PER_TRADE_USDT = 5.0  # Her işlemde sabit 10 USDT risk
+RISK_PER_TRADE_USDT = 5.0  # Her işlemde sabit 5 USDT risk
 LEVERAGE = 10  # Daha güvenli başlangıç kaldıracı (ByBit'te max 25x genelde)
 
 # Trading Ayarları
