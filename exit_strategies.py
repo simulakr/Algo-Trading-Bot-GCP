@@ -78,38 +78,37 @@ class ExitStrategy:
         """ByBit'e özel pozisyon kapatma"""
         symbol = position['symbol']
         try:
-            # ByBit'te TP/SL otomatik iptal olur, ayrıca iptal etmeye gerek yok
             order = self.client.place_order(
                 category="linear",
                 symbol=symbol,
                 side="Sell" if position['direction'] == "LONG" else "Buy",
                 orderType="Market",
                 qty=str(position['quantity']),
-                positionIdx=1 if position['direction'] == "LONG" else 2,
+                # positionIdx KALDIR 👈
                 reduceOnly=True
             )
-
+    
             if order['retCode'] == 0:
                 self.logger.info(f"{symbol} pozisyonu kapatıldı. Sebep: {reason}")
                 return True
             return False
-
+    
         except Exception as e:
             self.logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
             return False
-
+    
     def set_take_profit_stop_loss(self, symbol: str, direction: str, quantity: float, take_profit: float, stop_loss: float) -> bool:
         """TP ve SL emirlerini ayrıca gönder"""
         try:
             order = self.client.set_trading_stop(
                 category="linear",
                 symbol=symbol,
-                side="Buy" if direction == "LONG" else "Sell",
+                # side ve positionIdx KALDIR 👈
                 takeProfit=str(take_profit),
                 stopLoss=str(stop_loss),
                 tpTriggerBy="MarkPrice",
-                slTriggerBy="MarkPrice",
-                positionIdx=0  # One-Way modunda 0 kullan
+                slTriggerBy="MarkPrice"
+                # positionIdx KALDIR 👈
             )
             return order['retCode'] == 0
         except Exception as e:
