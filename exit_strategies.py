@@ -44,28 +44,28 @@ class ExitStrategy:
         """ByBit'e özel TP/SL emir güncelleme"""
         symbol = position['symbol']
         try:
-            # ByBit'te TP/SL aynı anda gönderilebilir
+            # ByBit'te TP/SL aynı anda gönderilebilir - positionIdx KALDIR
             order = self.client.set_trading_stop(
                 category="linear",
                 symbol=symbol,
-                positionIdx=1 if position['direction'] == "LONG" else 2,
+                # positionIdx PARAMETRESİNİ KALDIR 👈
                 takeProfit=str(new_tp),
                 stopLoss=str(new_sl),
                 tpTriggerBy="LastPrice",
-                slTriggerBy="MarkPrice",
-                tpLimitPrice=str(new_tp),  # Limit fiyatı TP için
-                slOrderType="Market"  # SL her zaman marketle
+                slTriggerBy="MarkPrice", 
+                tpLimitPrice=str(new_tp),
+                slOrderType="Market"
             )
-
+    
             if order['retCode'] != 0:
                 raise Exception(order['retMsg'])
-
+    
             position.update({
                 'take_profit': new_tp,
                 'stop_loss': new_sl
             })
             return True
-
+    
         except Exception as e:
             self.logger.error(f"{symbol} TP/SL güncelleme hatası: {str(e)}")
             return False
