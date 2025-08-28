@@ -95,6 +95,17 @@ class PositionManager:
             self.logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
             return False
 
+    def update_existing_position(self, symbol: str, data: Dict):
+        """Mevcut pozisyonun TP/SL seviyelerini güncelle"""
+        position = self.get_active_position(symbol)
+        if position:
+            new_tp, new_sl = self.exit_strategy.calculate_levels(
+                position['entry_price'],
+                data['pct_atr'],
+                position['direction']
+            )
+            self.exit_strategy._update_orders(position, new_tp, new_sl)
+        
     def manage_positions(self, signals: Dict[str, Optional[str]]) -> None:
         """Tüm aktif pozisyonları yönetir (Binance versiyonuyla aynı)"""
         for symbol, position in list(self.active_positions.items()):
