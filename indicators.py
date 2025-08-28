@@ -178,9 +178,18 @@ def dc_breakout_signal(df, dc_upper='dc_upper_50', dc_lower='dc_lower_50',
 
 def clean_signals(signal_series, window=10):
     """
-    Son window bar içinde tekrar eden sinyalleri filtreler.
+    Son window bar içinde sinyal varsa, yeni sinyali engeller
     """
-    return signal_series & (signal_series.shift(1).rolling(window=window).sum() == 0)
+    cleaned = signal_series.copy()
+    
+    for i in range(len(signal_series)):
+        if signal_series.iloc[i]:  # Eğer sinyal varsa
+            # Önceki window barda sinyal var mı kontrol et
+            start_idx = max(0, i - window)
+            if signal_series.iloc[start_idx:i].any():
+                cleaned.iloc[i] = False  # Sinyali temizle
+                
+    return cleaned
 
 # --- Toplu Hesaplama ---
 def calculate_indicators(df, symbol):
