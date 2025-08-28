@@ -1,21 +1,25 @@
 from pybit.unified_trading import HTTP
 from typing import Dict, Any, Optional, Tuple
 import logging
+from config import TP_ROUND_NUMBERS
 
 class ExitStrategy:
     def __init__(self, bybit_client: HTTP):
         self.client = bybit_client
         self.logger = logging.getLogger(__name__)
 
-    def calculate_levels(self, entry_price: float, pct_atr: float, direction: str) -> Tuple[float, float]:
-        """Binance versiyonuyla tamamen aynı (seviye hesaplama değişmez)"""
+    def calculate_levels(self, entry_price: float, atr_value: float, direction: str) -> Tuple[float, float]:
+        """ATR değerine göre TP/SL seviyelerini hesaplar"""
         if direction == "LONG":
-            take_profit = entry_price * (1 + (4 * pct_atr / 100))
-            stop_loss = entry_price * (1 - (1 * pct_atr / 100))
+            take_profit = entry_price + (4 * atr_value)  # 🟢 Direct ATR add
+            stop_loss = entry_price - (1 * atr_value)
         else:
-            take_profit = entry_price * (1 - (4 * pct_atr / 100))
-            stop_loss = entry_price * (1 + (2 * pct_atr / 100))
-        return (round(take_profit, 4), round(stop_loss, 4))
+            take_profit = entry_price - (4 * atr_value)
+            stop_loss = entry_price + (2 * atr_value)
+                
+        round_to = TP_ROUND_NUMBERS.get(symbol, 3)
+        
+        return (round(take_profit, round_to), round(stop_loss, round_to))
 
     def manage_position(self, position: Dict[str, Any], current_signal: Optional[str] = None) -> str:
         """Binance versiyonuyla aynı (sinyal mantığı değişmez)"""
