@@ -33,7 +33,7 @@ class PositionManager:
                 side="Buy" if direction == "LONG" else "Sell",
                 orderType="Market",
                 qty=quantity, 
-                positionIdx=1 if direction == "LONG" else 2,
+                # positionIdx=1 if direction == "LONG" else 2,
                 reduceOnly=False
             )
 
@@ -81,7 +81,7 @@ class PositionManager:
                 side="Sell" if position['direction'] == "LONG" else "Buy",
                 orderType="Market",
                 qty=str(position['quantity']),
-                positionIdx=1 if position['direction'] == "LONG" else 2,
+                # positionIdx=1 if position['direction'] == "LONG" else 2,
                 reduceOnly=True
             )
 
