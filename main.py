@@ -99,21 +99,37 @@ class TradingBot:
         return signals
 
     def _execute_trades(self, signals: Dict[str, Optional[str]], all_data: Dict[str, Optional[Dict]]):
-        """Sinyallere göre işlem aç"""
+        """Sinyallere göre işlem aç veya güncelle"""
         for symbol, signal in signals.items():
             if not signal or not all_data.get(symbol):
                 continue
-
-            if self.position_manager.has_active_position(symbol):
-                continue
-
+    
             data = all_data[symbol]
-            self.position_manager.open_position(
-                symbol=symbol,
-                direction=signal,
-                entry_price=data['close'],
-                pct_atr=data['pct_atr']
-            )
+            
+            if self.position_manager.has_active_position(symbol):
+                current_pos = self.position_manager.get_active_position(symbol)
+                
+                if current_pos['direction'] == signal:
+                    # AYNI YÖNDE sinyal - TP/SL güncelle
+                    self.position_manager.update_existing_position(symbol, data)
+                else:
+                    # TERS YÖNDE sinyal - Öncekini kapat, yeniyi aç
+                    self.position_manager.close_position(symbol, "REVERSE_SIGNAL")
+                    time.sleep(1)  # 1 saniye bekle
+                    self.position_manager.open_position(
+                        symbol=symbol,
+                        direction=signal,
+                        entry_price=data['close'],
+                        pct_atr=data['pct_atr']
+                    )
+            else:
+                # YENİ işlem aç
+                self.position_manager.open_position(
+                    symbol=symbol,
+                    direction=signal,
+                    entry_price=data['close'],
+                    pct_atr=data['pct_atr']
+                )
 
     def run(self):
         """Ana çalıştırma döngüsü"""
