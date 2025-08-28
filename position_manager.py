@@ -13,52 +13,64 @@ class PositionManager:
 
     def open_position(self, symbol: str, direction: str, entry_price: float, pct_atr: float) -> Optional[Dict]:
         """
-        Yeni pozisyon açar ve TP/SL emirlerini yerleştirir (ByBit Futures)
-        Args:
-            symbol: İşlem çifti (Ör: 'SUIUSDT')
-            direction: 'LONG' veya 'SHORT'
-            entry_price: Giriş fiyatı
-            pct_atr: Mevcut ATR'nin close price'a yüzdesi (örn: 2.0 = %2)
-        Returns:
-            Pozisyon bilgisi dict veya None (hata durumunda)
+        Yeni pozisyon açar ve TP/SL emirlerini yerleştirir
         """
         try:
             # Pozisyon büyüklüğünü hesapla
             quantity = self._calculate_position_size(symbol, entry_price)
-
+            logger.info(f"{symbol} {direction} pozisyon hesaplandı | Miktar: {quantity}")
+            
             # Market emri ile pozisyon aç
             order = self.client.place_order(
                 category="linear",
                 symbol=symbol,
                 side="Buy" if direction == "LONG" else "Sell",
                 orderType="Market",
-                qty=quantity, 
-                # positionIdx=1 if direction == "LONG" else 2,
+                qty=quantity,
                 reduceOnly=False
             )
-
+    
             if order['retCode'] != 0:
-                raise Exception(order['retMsg'])
-
-            # Pozisyon bilgilerini oluştur
-            position = {
-                'symbol': symbol,
-                'direction': direction,
-                'entry_price': entry_price,
-                'quantity': quantity,
-                'current_pct_atr': pct_atr,
-                'order_id': order['result']['orderId']
-            }
-
-            # TP/SL emirlerini yerleştir
+                raise Exception(f"Pozisyon açma hatası: {order['retMsg']}")
+    
+            logger.info(f"{symbol} {direction} pozisyon açıldı | Miktar: {quantity} | Entry: {entry_price}")
+    
+            # TP/SL seviyelerini hesapla
             tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, pct_atr, direction)
-            if self.exit_strategy._update_orders(position, tp_price, sl_price):
+            logger.info(f"{symbol} TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price} | Risk: {pct_atr}%")
+            
+            # TP/SL emirlerini gönder
+            tp_sl_success = self.exit_strategy.set_take_profit_stop_loss(
+                symbol=symbol,
+                direction=direction,
+                quantity=quantity,
+                take_profit=tp_price,
+                stop_loss=sl_price
+            )
+    
+            if tp_sl_success:
+                logger.info(f"{symbol} TP/SL başarıyla ayarlandı")
+                # Pozisyon bilgilerini kaydet
+                position = {
+                    'symbol': symbol,
+                    'direction': direction,
+                    'entry_price': entry_price,
+                    'quantity': quantity,
+                    'take_profit': tp_price,
+                    'stop_loss': sl_price,
+                    'current_pct_atr': pct_atr,
+                    'order_id': order['result']['orderId']
+                }
                 self.active_positions[symbol] = position
-                self.logger.info(f"{symbol} {direction} pozisyonu açıldı | Miktar: {quantity} | Risk: {RISK_PER_TRADE_USDT}$")
                 return position
-
+            else:
+                logger.warning(f"{symbol} TP/SL ayarlanamadı - Pozisyon kapatılıyor")
+                # TP/SL ayarlanamazsa pozisyonu kapat
+                self.close_position(symbol, "TP_SL_FAILED")
+                return None
+    
         except Exception as e:
-            self.logger.error(f"{symbol} pozisyon açma hatası: {str(e)}")
+            logger.error(f"{symbol} pozisyon açma hatası: {str(e)}")
             return None
 
     def _calculate_position_size(self, symbol: str, entry_price: float) -> str:
