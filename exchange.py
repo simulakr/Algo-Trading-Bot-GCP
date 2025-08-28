@@ -25,7 +25,7 @@ class BybitFuturesAPI:  # Sınıf adı değişti
         self,
         symbol: str = 'SOLUSDT',
         interval: str = '15',  # Bybit formatı (15m için '15')
-        limit: int = 200,  # Bybit max limit 200
+        limit: int = 300,  # Bybit max limit 300
         convert_to_float: bool = True
     ) -> Optional[pd.DataFrame]:
         """
@@ -67,7 +67,7 @@ class BybitFuturesAPI:  # Sınıf adı değişti
         self,
         symbols: List[str],
         interval: str = '15',
-        limit: int = 200
+        limit: int = 300
     ) -> Dict[str, pd.DataFrame]:
         """Birden fazla sembol için veri çeker"""
         return {sym: self.get_ohlcv(sym, interval, limit) for sym in symbols}
