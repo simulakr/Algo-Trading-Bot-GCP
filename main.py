@@ -151,7 +151,10 @@ class TradingBot:
                 self._execute_trades(signals, all_data)
 
                 elapsed = time.time() - start_time
-                logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s")
+                completion_time = datetime.now()
+                time_str = completion_time.strftime("%H:%M:%S.%f")[:-3]  # Milisecond
+
+                logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {time_str}")
                 
             except KeyboardInterrupt:
                 logger.info("Bot manuel olarak durduruldu")
