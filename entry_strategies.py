@@ -1,7 +1,7 @@
 from typing import Dict, Any, Tuple
 
 def check_long_entry(row: Dict[str, Any]) -> bool:
-    return row['dc_order']=='long'
+    return row['bb_3_touch_long_clean']=='long'
 
 def check_short_entry(row: Dict[str, Any]) -> bool:
-    return row['dc_order']=='short'
+    return row['bb_3_touch_short_clean']=='short'
