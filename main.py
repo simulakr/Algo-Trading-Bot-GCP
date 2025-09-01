@@ -152,7 +152,7 @@ class TradingBot:
 
                 elapsed = time.time() - start_time
                 completion_time = datetime.now()
-                time_str = completion_time.strftime("%H:%M:%S.%f")[:-3]  # Milisecond
+                time_str = completion_time.strftime("%H:%M:%S.%f")[:-1]  # Milisecond
 
                 logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {time_str}")
                 
