@@ -1,27 +1,20 @@
-from exchange import BybitFuturesAPI
-from position_manager import PositionManager
-import logging
+from pybit.unified_trading import HTTP
+import os
+from dotenv import load_dotenv
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+load_dotenv()
+api_key = os.getenv('BYBIT_API_KEY')
+api_secret = os.getenv('BYBIT_API_SECRET')
 
-# Test fonksiyonu
-def test_bybit_operations():
-    api = BybitFuturesAPI(testnet=False)
-    pm = PositionManager(api.session)
-    
-    # 1. Veri çekme testi
-    data = api.get_ohlcv("SOLUSDT", "15")
-    logger.info(f"SOL Verisi:\n{data.tail(2)}")
-    
-    # 2. 5$'lık 5x LONG pozisyon açma
-    entry_price = float(data['close'].iloc[-1])
-    pm.open_position(
-        symbol="SOLUSDT",
-        direction="LONG",
-        entry_price=entry_price,
-        pct_atr=1.0  # Basit test için sabit ATR
-    )
+session = HTTP(testnet=False, api_key=api_key, api_secret=api_secret)
 
-if __name__ == "__main__":
-    test_bybit_operations()
+# Coin miktarı ile deneyelim (1000PEPE)
+session.place_order(
+    category='linear',
+    symbol='1000PEPEUSDT',
+    side='Buy',
+    orderType='Market',
+    qty='10000',  # 100,000 PEPE (yaklaşık 1$)
+    reduceOnly=False
+)
+print('10,000 1000PEPE long işlem gönderildi!')
