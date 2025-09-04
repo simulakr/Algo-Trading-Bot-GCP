@@ -156,7 +156,7 @@ class TradingBot:
                 self._execute_trades(signals, all_data)
 
                 elapsed = time.time() - start_time
-                logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {server_time}")
+                logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {time.time()}")
                 
             except KeyboardInterrupt:
                 logger.info("Bot manuel olarak durduruldu")
