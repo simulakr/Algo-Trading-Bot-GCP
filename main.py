@@ -135,7 +135,7 @@ class TradingBot:
         """Ana çalıştırma döngüsü"""
         server_time_response = self.api.session.get_server_time()
         timestamp = int(server_time_response['result']['timeSecond'])
-        server_time = datetime.fromtimestamp(timestamp).strftime("%H:%M:%S.%f")
+        server_time = datetime.fromtimestamp(timestamp).strftime("%H:%M:%S.%f")[:-3]
         logger.info(f"Bot başlatıldı | Server Time:{server_time} | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
 
         while True:
