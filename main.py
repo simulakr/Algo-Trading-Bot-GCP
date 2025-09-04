@@ -120,6 +120,7 @@ class TradingBot:
                         symbol=symbol,
                         direction=signal,
                         entry_price=data['close'],
+                        atr_value=data['atr'],
                         pct_atr=data['pct_atr']
                     )
             else:
@@ -128,6 +129,7 @@ class TradingBot:
                     symbol=symbol,
                     direction=signal,
                     entry_price=data['close'],
+                    atr_value=data['atr'],
                     pct_atr=data['pct_atr']
                 )
 
