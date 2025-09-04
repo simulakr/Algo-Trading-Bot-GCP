@@ -49,7 +49,7 @@ class TradingBot:
         try:
             # Bybit sunucu zamanını al
             server_time = self.api.session.get_server_time()
-            ts = server_time['result']['timeSecond'] * 1000  # Unix timestamp milisaniye
+            ts = int(server_time['result']['timeSecond']) * 1000  # Unix timestamp milisaniye
         
             # Bybit zamanına göre next candle hesapla
             next_candle_ts = ((ts // 900000) + 1) * 900000  # 15 dakika = 900000 ms
@@ -62,7 +62,7 @@ class TradingBot:
             # Fallback: local zaman
             now = datetime.datetime.now()
             next_candle = now.replace(second=0, microsecond=0) + datetime.timedelta(minutes=15)
-            wait_seconds = (next_candle - now).total_seconds() + 2
+            wait_seconds = (next_candle - now).total_seconds() + 1
             time.sleep(max(wait_seconds, 1))
 
     def _get_market_data_batch(self) -> Dict[str, Optional[Dict]]:
