@@ -151,7 +151,7 @@ class TradingBot:
                 self._execute_trades(signals, all_data)
 
                 elapsed = time.time() - start_time
-                completion_time = datetime.datetime.now()
+                completion_time = server_time
                 time_str = completion_time.strftime("%H:%M:%S.%f")[:-1]  # Milisecond
 
                 logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {time_str}")
