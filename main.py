@@ -133,7 +133,8 @@ class TradingBot:
 
     def run(self):
         """Ana çalıştırma döngüsü"""
-        logger.info(f"Bot başlatıldı | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
+        server_time = self.api.session.get_server_time()
+        logger.info(f"Bot başlatıldı | server_time | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
 
         while True:
             try:
@@ -151,9 +152,7 @@ class TradingBot:
                 self._execute_trades(signals, all_data)
 
                 elapsed = time.time() - start_time
-                completion_time = server_time
-                time_str = completion_time.strftime("%H:%M:%S.%f")[:-1]  # Milisecond
-
+                time_str = server_time.strftime("%H:%M:%S.%f")[:-5]  # Milisecond
                 logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {time_str}")
                 
             except KeyboardInterrupt:
