@@ -13,7 +13,7 @@ class PositionManager:
         self.active_positions: Dict[str, Dict] = {}  # {symbol: position_data}
         self.logger = logging.getLogger(__name__)
 
-    def open_position(self, symbol: str, direction: str, entry_price: float, pct_atr: float) -> Optional[Dict]:
+    def open_position(self, symbol: str, direction: str, entry_price: float, atr_value: float, pct_atr: float) -> Optional[Dict]:
         """
         Yeni pozisyon açar ve TP/SL emirlerini yerleştirir
         """
@@ -38,8 +38,8 @@ class PositionManager:
             logger.info(f"{symbol} {direction} pozisyon açıldı | Miktar: {quantity} | Entry: {entry_price}")
     
             # TP/SL seviyelerini hesapla
-            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, df['atr'].iloc[-1], direction)
-            logger.info(f"{symbol} TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price} | Risk: {pct_atr}%")
+            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction)
+            logger.info(f"{symbol} TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
             
             # TP/SL emirlerini gönder
             tp_sl_success = self.exit_strategy.set_take_profit_stop_loss(
