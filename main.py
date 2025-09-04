@@ -55,7 +55,7 @@ class TradingBot:
             next_candle_ts = ((ts // 900000) + 1) * 900000  # 15 dakika = 900000 ms
             wait_ms = next_candle_ts - ts - 1000  # 1 saniye buffer
         
-            # time.sleep(max(wait_ms / 2000, 1)) 
+            time.sleep(max(wait_ms / 1000, 1)) 
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
         
         except Exception as e:
