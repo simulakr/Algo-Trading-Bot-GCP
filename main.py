@@ -134,7 +134,7 @@ class TradingBot:
     def run(self):
         """Ana çalıştırma döngüsü"""
         server_time = self.api.session.get_server_time()
-        logger.info(f"Bot başlatıldı | server_time | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
+        logger.info(f"Bot başlatıldı | {server_time} | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
 
         while True:
             try:
