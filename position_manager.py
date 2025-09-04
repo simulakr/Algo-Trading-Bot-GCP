@@ -4,6 +4,8 @@ from exit_strategies import ExitStrategy
 import logging
 from config import LEVERAGE, RISK_PER_TRADE_USDT, ROUND_NUMBERS
 
+logger = logging.getLogger(__name__)
+
 class PositionManager:
     def __init__(self, client: HTTP):
         self.client = client
