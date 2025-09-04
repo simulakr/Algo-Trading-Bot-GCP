@@ -53,9 +53,9 @@ class TradingBot:
         
             # Bybit zamanına göre next candle hesapla
             next_candle_ts = ((ts // 900000) + 1) * 900000  # 15 dakika = 900000 ms
-            wait_ms = next_candle_ts - ts + 400  # 0.4 saniye buffer
+            wait_ms = next_candle_ts - ts - 1000  # 1 saniye buffer
         
-            time.sleep(max(wait_ms / 1000, 1))
+            # time.sleep(max(wait_ms / 2000, 1)) 
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
         
         except Exception as e:
@@ -135,10 +135,8 @@ class TradingBot:
 
     def run(self):
         """Ana çalıştırma döngüsü"""
-        server_time_response = self.api.session.get_server_time()
-        timestamp = int(server_time_response['result']['timeSecond'])
-        server_time = datetime.datetime.fromtimestamp(timestamp).strftime("%H:%M:%S.%f")[:-3]
-        logger.info(f"Bot başlatıldı | Server Time: {server_time} | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
+        
+        logger.info(f"Bot başlatıldı | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
 
         while True:
             try:
@@ -156,7 +154,10 @@ class TradingBot:
                 self._execute_trades(signals, all_data)
 
                 elapsed = time.time() - start_time
-                logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {time.time()}")
+                server_time_response = self.api.session.get_server_time()
+                timestamp = int(server_time_response['result']['timeSecond'])
+                server_time = datetime.datetime.fromtimestamp(timestamp).strftime("%H:%M:%S.%f")[:-5]
+                logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {server_time}")
                 
             except KeyboardInterrupt:
                 logger.info("Bot manuel olarak durduruldu")
