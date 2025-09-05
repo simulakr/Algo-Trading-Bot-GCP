@@ -53,7 +53,7 @@ class TradingBot:
         
             # Bybit zamanına göre next candle hesapla
             next_candle_ts = (((ts // 900000) + 1) * 900000) - 2000  # 15 dakika = 900000 ms
-            wait_ms = next_candle_ts - ts + 1000  # 1 saniye buffer
+            wait_ms = next_candle_ts - ts + 800  # 1 saniye buffer
         
             time.sleep(max(wait_ms / 1000, 1)) 
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
@@ -156,7 +156,7 @@ class TradingBot:
                 elapsed = time.time() - start_time
                 server_time_response = self.api.session.get_server_time()
                 timestamp = int(server_time_response['result']['timeSecond'])
-                server_time = datetime.datetime.fromtimestamp(timestamp).strftime("%H:%M:%S.%f")[:-5]
+                server_time = datetime.datetime.fromtimestamp(timestamp).strftime("%H:%M:%S.%f")[:-4]
                 logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {server_time}")
                 
             except KeyboardInterrupt:
