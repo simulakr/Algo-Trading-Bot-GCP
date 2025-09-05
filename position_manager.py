@@ -115,6 +115,7 @@ class PositionManager:
         if position:
             new_tp, new_sl = self.exit_strategy.calculate_levels(
                 position['entry_price'],
+                atr_value=data['atr'],
                 data['pct_atr'],
                 position['direction']
             )
