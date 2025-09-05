@@ -52,7 +52,7 @@ class TradingBot:
             ts = int(server_time['result']['timeSecond']) * 1000  # Unix timestamp milisaniye
         
             # Bybit zamanına göre next candle hesapla
-            next_candle_ts = ((ts // 900000) + 1) * 900000  # 15 dakika = 900000 ms
+            next_candle_ts = (((ts // 900000) + 1) * 900000) - 2000  # 15 dakika = 900000 ms
             wait_ms = next_candle_ts - ts + 1000  # 1 saniye buffer
         
             time.sleep(max(wait_ms / 1000, 1)) 
