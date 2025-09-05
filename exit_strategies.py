@@ -8,7 +8,7 @@ class ExitStrategy:
         self.client = bybit_client
         self.logger = logging.getLogger(__name__)
 
-    def calculate_levels(self, entry_price: float, atr_value: float, direction: str) -> Tuple[float, float]:
+    def calculate_levels(self, entry_price: float, atr_value: float, direction: str, symbol: str) -> Tuple[float, float]:
         """ATR değerine göre TP/SL seviyelerini hesaplar"""
         if direction == "LONG":
             take_profit = entry_price + (4 * atr_value)  # 🟢 Direct ATR add
