@@ -38,7 +38,7 @@ class PositionManager:
             logger.info(f"{symbol} {direction} pozisyon açıldı | Miktar: {quantity} | Entry: {entry_price}")
     
             # TP/SL seviyelerini hesapla
-            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction)
+            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
             logger.info(f"{symbol} TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
             
             # TP/SL emirlerini gönder
