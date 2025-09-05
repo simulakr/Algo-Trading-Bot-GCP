@@ -52,15 +52,14 @@ class TradingBot:
             ts = int(server_time['result']['timeSecond']) * 1000  # Unix timestamp milisaniye
         
             # Bybit zamanına göre next candle hesapla
-            current_candle_ts = (ts // 900000) * 900000
+            current_candle_ts = ((ts // 900000 + 1) * 900000) -1000
             next_candle_ts = current_candle_ts + 900000
-            target_ts = next_candle_ts - 1600
-            wait_ms = target_ts - ts
+            wait_ms = next_candle_ts - ts
             
             # next_candle_ts = (((ts // 900000) + 1) * 900000) - 2000  # 15 dakika = 900000 ms
             # wait_ms = next_candle_ts - ts + 800  # 1 saniye buffer
         
-            time.sleep(max(wait_ms / 1000, 2)) 
+            time.sleep(max(wait_ms / 1000, 1)) 
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
         
         except Exception as e:
