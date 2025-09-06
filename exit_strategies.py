@@ -29,10 +29,10 @@ class ExitStrategy:
             self._close_position(position, "REVERSE_SIGNAL")
             return "CLOSED_FOR_REVERSE"
 
-        if current_signal:
+        if current_signal and current_data:
             new_tp, new_sl = self.calculate_levels(
                 position['entry_price'],
-                data['atr'],
+                current_data['atr'],
                 current_direction,
                 position['symbol']
                 )
