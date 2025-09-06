@@ -32,9 +32,10 @@ class ExitStrategy:
         if current_signal:
             new_tp, new_sl = self.calculate_levels(
                 position['entry_price'],
-                position['current_pct_atr'],
-                current_direction
-            )
+                data['atr'],
+                current_direction,
+                position['symbol']
+                )
             self._update_orders(position, new_tp, new_sl)
             return "UPDATED"
 
