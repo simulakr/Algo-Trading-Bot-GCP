@@ -21,14 +21,12 @@ class ExitStrategy:
         
         return (round(take_profit, round_to), round(stop_loss, round_to))
 
-    def manage_position(self, position: Dict[str, Any], current_signal: Optional[str] = None) -> str:
+    def manage_position(self, position: Dict[str, Any], current_signal: Optional[str] = None, current_data: Optional[Dict] = None) -> str:
         """Binance versiyonuyla aynı (sinyal mantığı değişmez)"""
         current_direction = position['direction']
-
         if current_signal and current_signal != current_direction:
             self._close_position(position, "REVERSE_SIGNAL")
             return "CLOSED_FOR_REVERSE"
-
         if current_signal and current_data:
             new_tp, new_sl = self.calculate_levels(
                 position['entry_price'],
@@ -38,11 +36,9 @@ class ExitStrategy:
                 )
             self._update_orders(position, new_tp, new_sl)
             return "UPDATED"
-
         if self._check_price_hit(position):
             self._close_position(position, "TP/SL_HIT")
             return "CLOSED_FOR_TP_SL"
-
         return "NO_ACTION"
 
     def _update_orders(self, position: Dict[str, Any], new_tp: float, new_sl: float) -> bool:
