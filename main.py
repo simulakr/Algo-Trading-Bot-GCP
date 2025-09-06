@@ -179,7 +179,7 @@ class TradingBot:
                 signals = self._generate_signals(all_data)
                 
                 # Pozisyon yönetimi ve işlemler
-                self.position_manager.manage_positions(signals)
+                self.position_manager.manage_positions(signals, all_data)
                 self._execute_trades(signals, all_data)
 
                 elapsed = time.time() - start_time
