@@ -52,8 +52,9 @@ class ExitStrategy:
                 takeProfit=str(new_tp),
                 stopLoss=str(new_sl),
                 tpTriggerBy="LastPrice",
-                slTriggerBy="MarkPrice"
-                # tpLimitPrice ve slOrderType parametrelerini KALDIR
+                slTriggerBy="MarkPrice",
+                tpOrderType="Limit"
+                # tpLimitPrice ve slOrderType parametrelerini yok.
             )
     
             if order['retCode'] != 0:
