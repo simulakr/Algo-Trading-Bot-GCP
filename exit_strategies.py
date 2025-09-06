@@ -45,17 +45,15 @@ class ExitStrategy:
         """ByBit'e özel TP/SL emir güncelleme"""
         symbol = position['symbol']
         try:
-            # ByBit'te TP/SL aynı anda gönderilebilir - positionIdx KALDIR
+            # ByBit'te TP/SL aynı anda gönderilebilir
             order = self.client.set_trading_stop(
                 category="linear",
                 symbol=symbol,
-                # positionIdx PARAMETRESİNİ KALDIR 👈
                 takeProfit=str(new_tp),
                 stopLoss=str(new_sl),
                 tpTriggerBy="LastPrice",
-                slTriggerBy="MarkPrice", 
-                tpLimitPrice=str(new_tp),
-                slOrderType="Market"
+                slTriggerBy="MarkPrice"
+                # tpLimitPrice ve slOrderType parametrelerini KALDIR
             )
     
             if order['retCode'] != 0:
