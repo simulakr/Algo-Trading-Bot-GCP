@@ -102,8 +102,9 @@ class ExitStrategy:
                 # side ve positionIdx KALDIR 👈
                 takeProfit=str(take_profit),
                 stopLoss=str(stop_loss),
-                tpTriggerBy="MarkPrice",
-                slTriggerBy="MarkPrice"
+                tpTriggerBy="LastPrice",
+                slTriggerBy="MarkPrice",
+                tpOrderType="Limit"
                 # positionIdx KALDIR 👈
             )
             return order['retCode'] == 0
