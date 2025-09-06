@@ -26,6 +26,7 @@ class TradingBot:
         self.symbols = SYMBOLS
         self.interval = INTERVAL
         self._initialize_account()
+        self._load_existing_positions()
 
     def _initialize_account(self):
         """ByBit için hesap ayarlarını yapılandır"""
@@ -44,6 +45,30 @@ class TradingBot:
                 else:
                     logger.warning(f"{symbol} kaldıraç ayarlama uyarısı: {str(e)}")
 
+    def _load_existing_positions(self):
+        """Bybit'teki mevcut pozisyonları bot hafızasına yükle"""
+        try:
+            positions = self.api.session.get_positions(category='linear', settleCoin='USDT')
+            if positions['retCode'] == 0:
+                for pos in positions['result']['list']:
+                    if float(pos.get('size', 0)) > 0:  # Açık pozisyon varsa
+                        symbol = pos['symbol']
+                        direction = 'LONG' if pos['side'] == 'Buy' else 'SHORT'
+                        
+                        # Bot hafızasına ekle
+                        self.position_manager.active_positions[symbol] = {
+                            'symbol': symbol,
+                            'direction': direction,
+                            'entry_price': float(pos['avgPrice']),
+                            'quantity': float(pos['size']),
+                            'take_profit': float(pos['takeProfit']) if pos['takeProfit'] else None,
+                            'stop_loss': float(pos['stopLoss']) if pos['stopLoss'] else None,
+                            'order_id': None  # API'den alınamadığı için None
+                        }
+                        logger.info(f"{symbol} mevcut pozisyon hafızaya yüklendi: {direction}")
+        except Exception as e:
+            logger.error(f"Mevcut pozisyonlar yüklenirken hata: {e}")
+    
     def _wait_until_next_candle(self):
         """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle"""
         try:
