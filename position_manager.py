@@ -121,11 +121,11 @@ class PositionManager:
             )
             self.exit_strategy._update_orders(position, new_tp, new_sl)
         
-    def manage_positions(self, signals: Dict[str, Optional[str]]) -> None:
+    def manage_positions(self, signals: Dict[str, Optional[str]], all_data: Dict[str, Optional[Dict]]) -> None:
         """Tüm aktif pozisyonları yönetir (Binance versiyonuyla aynı)"""
         for symbol, position in list(self.active_positions.items()):
             current_data = all_data.get(symbol)
-            result = self.exit_strategy.manage_position(position, signals.get(symbol))      
+            result = self.exit_strategy.manage_position(position, signals.get(symbol), current_data)
             if "CLOSED" in result:
                 del self.active_positions[symbol]
 
