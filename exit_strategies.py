@@ -53,8 +53,8 @@ class ExitStrategy:
                 stopLoss=str(new_sl),
                 tpTriggerBy="LastPrice",
                 slTriggerBy="MarkPrice",
-                tpOrderType="Limit",
-                tpLimitPrice=str(new_tp)
+                #tpOrderType="Limit",
+                #tpLimitPrice=str(new_tp)
                 # slOrderType parametresi yok.
             )
     
