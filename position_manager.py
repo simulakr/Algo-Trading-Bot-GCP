@@ -47,7 +47,8 @@ class PositionManager:
                 direction=direction,
                 quantity=quantity,
                 take_profit=tp_price,
-                stop_loss=sl_price
+                stop_loss=sl_price,
+                tpLimitPrice=tp_price
             )
     
             if tp_sl_success:
