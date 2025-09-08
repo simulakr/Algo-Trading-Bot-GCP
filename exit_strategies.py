@@ -74,13 +74,23 @@ class ExitStrategy:
         """ByBit'e özel pozisyon kapatma"""
         symbol = position['symbol']
         try:
+            # Önce gerçek pozisyonu kontrol et
+            real_positions = self.client.get_positions(category='linear', symbol=symbol)
+            if real_positions['retCode'] == 0:
+                real_pos = real_positions['result']['list'][0]
+                real_size = float(real_pos.get('size', 0))
+                
+                if real_size == 0:
+                    self.logger.info(f"{symbol} pozisyon zaten kapalı - hafızadan siliniyor. Sebep: {reason}")
+                    return True  # Pozisyon zaten kapalı, başarılı sayılır
+            
+            # Normal kapatma işlemi
             order = self.client.place_order(
                 category="linear",
                 symbol=symbol,
                 side="Sell" if position['direction'] == "LONG" else "Buy",
                 orderType="Market",
                 qty=str(position['quantity']),
-                # positionIdx KALDIR 👈
                 reduceOnly=True
             )
     
@@ -88,10 +98,15 @@ class ExitStrategy:
                 self.logger.info(f"{symbol} pozisyonu kapatıldı. Sebep: {reason}")
                 return True
             return False
-    
-        except Exception as e:
-            self.logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
-            return False
+
+    except Exception as e:
+        # Eğer hata "pozisyon yok" türündeyse başarılı sayılır
+        if "current position is zero" in str(e) or "110017" in str(e):
+            self.logger.info(f"{symbol} pozisyon zaten kapalı. Sebep: {reason}")
+            return True
+        
+        self.logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
+        return False
     
     def set_take_profit_stop_loss(self, symbol: str, direction: str, quantity: float, take_profit: float, stop_loss: float) -> bool:
         """TP ve SL emirlerini ayrıca gönder"""
