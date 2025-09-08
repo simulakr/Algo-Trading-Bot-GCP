@@ -98,15 +98,15 @@ class ExitStrategy:
                 self.logger.info(f"{symbol} pozisyonu kapatıldı. Sebep: {reason}")
                 return True
             return False
-
-    except Exception as e:
-        # Eğer hata "pozisyon yok" türündeyse başarılı sayılır
-        if "current position is zero" in str(e) or "110017" in str(e):
-            self.logger.info(f"{symbol} pozisyon zaten kapalı. Sebep: {reason}")
-            return True
-        
-        self.logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
-        return False
+    
+        except Exception as e:
+            # Eğer hata "pozisyon yok" türündeyse başarılı sayılır
+            if "current position is zero" in str(e) or "110017" in str(e):
+                self.logger.info(f"{symbol} pozisyon zaten kapalı. Sebep: {reason}")
+                return True
+            
+            self.logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
+            return False
     
     def set_take_profit_stop_loss(self, symbol: str, direction: str, quantity: float, take_profit: float, stop_loss: float) -> bool:
         """TP ve SL emirlerini ayrıca gönder"""
