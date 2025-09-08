@@ -70,29 +70,54 @@ class TradingBot:
             logger.error(f"Mevcut pozisyonlar yüklenirken hata: {e}")
     
     def _wait_until_next_candle(self):
-        """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle"""
+        """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle - Saatin çeyreklerinden 1 saniye önce"""
         try:
             # Bybit sunucu zamanını al
             server_time = self.api.session.get_server_time()
             ts = int(server_time['result']['timeSecond']) * 1000  # Unix timestamp milisaniye
-        
-            # Bybit zamanına göre next candle hesapla
-            current_candle_ts = ((ts // 900000 + 1) * 900000) -1000
-            next_candle_ts = current_candle_ts + 900000
-            wait_ms = next_candle_ts - ts
             
-            # next_candle_ts = (((ts // 900000) + 1) * 900000) - 2000  # 15 dakika = 900000 ms
-            # wait_ms = next_candle_ts - ts + 800  # 1 saniye buffer
-        
-            time.sleep(max(wait_ms / 1000, 1)) 
+            # Mevcut zamanı datetime'a çevir
+            from datetime import datetime, timezone
+            current_time = datetime.fromtimestamp(ts / 1000, timezone.utc)
+            
+            # Bir sonraki çeyrek dakikayı hesapla (XX:14, XX:29, XX:44, XX:59)
+            minute = current_time.minute
+            
+            if minute < 14:
+                target_minute = 14
+            elif minute < 29:
+                target_minute = 29
+            elif minute < 44:
+                target_minute = 44
+            elif minute < 59:
+                target_minute = 59
+            else:
+                # Bir sonraki saatin 14. dakikası
+                target_minute = 14
+                current_time = current_time.replace(hour=current_time.hour + 1)
+            
+            target_time = current_time.replace(minute=target_minute, second=59,  microsecond=0)
+            
+            if target_time <= current_time:
+                if target_minute == 59:
+                    target_time = target_time.replace(hour=target_time.hour + 1, minute=14)
+                elif target_minute == 44:
+                    target_time = target_time.replace(minute=59)
+                elif target_minute == 29:
+                    target_time = target_time.replace(minute=44)
+                else:  # 14
+                    target_time = target_time.replace(minute=29)
+            
+            wait_seconds = (target_time.timestamp() - current_time.timestamp())
+            
+            if wait_seconds > 0:
+                time.sleep(wait_seconds)
+            
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
-        
+            
         except Exception as e:
-            # Fallback: local zaman
-            now = datetime.datetime.now()
-            next_candle = now.replace(second=0, microsecond=0) + datetime.timedelta(minutes=15)
-            wait_seconds = (next_candle - now).total_seconds() + 1
-            time.sleep(max(wait_seconds, 1))
+            logger.error(f"Zamanlama hatası: {e}")
+            time.sleep(60)  # Hata durumunda 1 dakika bekle
 
     def _get_market_data_batch(self) -> Dict[str, Optional[Dict]]:
         """Tüm sembollerin verilerini tek seferde al"""
