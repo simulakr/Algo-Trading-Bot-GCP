@@ -119,7 +119,7 @@ class ExitStrategy:
                 stopLoss=str(stop_loss),
                 tpTriggerBy="LastPrice",
                 slTriggerBy="MarkPrice",
-                tpOrderType="Limit"
+                tpOrderType="Limit",
                 tpLimitPrice=str(take_profit)
             )
             return order['retCode'] == 0
