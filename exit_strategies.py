@@ -114,13 +114,12 @@ class ExitStrategy:
             order = self.client.set_trading_stop(
                 category="linear",
                 symbol=symbol,
-                # side ve positionIdx KALDIR 👈
                 takeProfit=str(take_profit),
                 stopLoss=str(stop_loss),
                 tpTriggerBy="LastPrice",
                 slTriggerBy="MarkPrice",
                 tpOrderType="Limit"
-                # positionIdx KALDIR 👈
+                tpLimitPrice=str(take_profit)
             )
             return order['retCode'] == 0
         except Exception as e:
