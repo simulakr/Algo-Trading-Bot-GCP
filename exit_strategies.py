@@ -29,11 +29,12 @@ class ExitStrategy:
             return "CLOSED_FOR_REVERSE"
         if current_signal and current_data:
             new_tp, new_sl = self.calculate_levels(
-                position['entry_price'],
+                current_data['close'],
                 current_data['atr'],
                 current_direction,
                 position['symbol']
                 )
+            position['entry_price'] = current_data['close']
             self._update_orders(position, new_tp, new_sl)
             return "UPDATED"
         if self._check_price_hit(position):
