@@ -167,11 +167,30 @@ class ExitStrategy:
                 symbol=position['symbol']
             )
             current_price = float(ticker['result']['list'][0]['lastPrice'])
-
+            
+            tp = position.get('take_profit')
+            sl = position.get('stop_loss')
+            
+            # None kontrolü
+            if tp is None and sl is None:
+                return False
+            
             if position['direction'] == 'LONG':
-                return current_price >= position['take_profit'] or current_price <= position['stop_loss']
-            return current_price <= position['take_profit'] or current_price >= position['stop_loss']
-
+                # TP kontrolü
+                if tp is not None and current_price >= tp:
+                    return True
+                # SL kontrolü  
+                if sl is not None and current_price <= sl:
+                    return True
+            else:  # SHORT
+                # TP kontrolü
+                if tp is not None and current_price <= tp:
+                    return True
+                # SL kontrolü
+                if sl is not None and current_price >= sl:
+                    return True
+                    
+            return False
         except Exception as e:
             self.logger.error(f"{position['symbol']} fiyat kontrol hatası: {str(e)}")
             return False
