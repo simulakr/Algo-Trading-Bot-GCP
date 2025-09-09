@@ -126,6 +126,38 @@ class ExitStrategy:
         except Exception as e:
             self.logger.error(f"{symbol} TP/SL ayarlama hatası: {str(e)}")
             return False
+
+    def set_limit_tp_sl(self, symbol, direction, entry_price, tp_price, sl_price, quantity):
+        """Normal limit emirlerle TP/SL simüle et"""
+        try:
+            # TP için limit emri
+            tp_side = "Sell" if direction == "LONG" else "Buy"
+            tp_order = self.client.place_order(
+                category="linear",
+                symbol=symbol,
+                side=tp_side,
+                orderType="Limit",
+                qty=str(quantity),
+                price=str(tp_price),
+                reduceOnly=True
+            )
+            
+            # SL için stop-limit emri
+            sl_order = self.client.place_order(
+                category="linear", 
+                symbol=symbol,
+                side=tp_side,
+                orderType="StopLimit",  # veya "Stop"
+                qty=str(quantity),
+                price=str(sl_price),
+                stopPrice=str(sl_price),
+                reduceOnly=True
+            )
+            
+            return True
+        except Exception as e:
+            print(f"Limit TP/SL hatası: {e}")
+            return False
     
     def _check_price_hit(self, position: Dict[str, Any]) -> bool:
         """ByBit'te fiyat kontrolü"""
