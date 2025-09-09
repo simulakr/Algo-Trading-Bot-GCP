@@ -109,7 +109,7 @@ class TradingBot:
                     target_time = target_time.replace(minute=29)
             
             wait_seconds = (target_time.timestamp() - current_time.timestamp())        
-            time.sleep(max(wait_seconds, 1))
+            time.sleep(max(wait_seconds, 2))
             
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
             
