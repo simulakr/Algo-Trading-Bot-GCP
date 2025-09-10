@@ -141,6 +141,7 @@ class ExitStrategy:
                 price=str(tp_price),
                 reduceOnly=True
             )
+            print(f"Limit Satış Emri ({tp_price}) başarıyla gönderildi: {tp_order}")
             
             # SL için stop-limit emri
             sl_order = self.client.place_order(
@@ -153,7 +154,8 @@ class ExitStrategy:
                 stopPrice=str(sl_price),
                 reduceOnly=True
             )
-            
+            print(f"Stop-Limit Emri ({sl_price}) başarıyla gönderildi: {stop_limit_order}")
+        
             return True
         except Exception as e:
             print(f"Limit TP/SL hatası: {e}")
