@@ -130,8 +130,9 @@ class ExitStrategy:
     def set_limit_tp_sl(self, symbol, direction, entry_price, tp_price, sl_price, quantity):
         """Normal limit emirlerle TP/SL simüle et"""
         try:
-            # TP için limit emri
             tp_side = "Sell" if direction == "LONG" else "Buy"
+            
+            # TP için limit emri
             tp_order = self.client.place_order(
                 category="linear",
                 symbol=symbol,
@@ -139,27 +140,39 @@ class ExitStrategy:
                 orderType="Limit",
                 qty=str(quantity),
                 price=str(tp_price),
-                reduceOnly=True
+                reduceOnly=True,
+                timeInForce="GTC"  # Good Till Cancel
             )
-            print(f"Limit Satış Emri ({tp_price}) başarıyla gönderildi: {tp_order}")
             
-            # SL için stop-limit emri
+            # SL için stop emri (daha güvenli)
             sl_order = self.client.place_order(
                 category="linear", 
                 symbol=symbol,
                 side=tp_side,
-                orderType="StopLimit",  # veya "Stop"
+                orderType="Market",  # Stop tetiklendiğinde market fiyatından
                 qty=str(quantity),
-                price=str(sl_price),
-                stopPrice=str(sl_price),
-                reduceOnly=True
+                stopPrice=str(sl_price),  # Tetikleme fiyatı
+                reduceOnly=True,
+                timeInForce="GTC"
             )
-            print(f"Stop-Limit Emri ({sl_price}) başarıyla gönderildi: {stop_limit_order}")
-        
-            return True
+            
+            # Emirlerin ID'lerini kaydet
+            tp_order_id = tp_order['result']['orderId']
+            sl_order_id = sl_order['result']['orderId']
+            
+            print(f"TP Limit: {tp_price} (ID: {tp_order_id})")
+            print(f"SL Stop: {sl_price} (ID: {sl_order_id})")
+            
+            # İleride iptal için ID'leri saklayın
+            return {
+                'tp_order_id': tp_order_id,
+                'sl_order_id': sl_order_id,
+                'success': True
+            }
+            
         except Exception as e:
             print(f"Limit TP/SL hatası: {e}")
-            return False
+            return {'success': False, 'error': str(e)}
     
     def _check_price_hit(self, position: Dict[str, Any]) -> bool:
         """ByBit'te fiyat kontrolü"""
