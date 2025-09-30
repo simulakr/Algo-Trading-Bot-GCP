@@ -50,6 +50,7 @@ TP_ROUND_NUMBERS = {
 # Risk Yönetimi
 RISK_PER_TRADE_USDT = 6.0  # Her işlemde sabit 5 USDT risk
 LEVERAGE = 10  # Daha güvenli başlangıç kaldıracı (ByBit'te max 25x genelde)
+DEFAULT_LEVERAGE = 10
 
 SYMBOL_SETTINGS = {
     'BTCUSDT': {'risk': 7.0, 'leverage': 10},
