@@ -51,5 +51,13 @@ TP_ROUND_NUMBERS = {
 RISK_PER_TRADE_USDT = 6.0  # Her işlemde sabit 5 USDT risk
 LEVERAGE = 10  # Daha güvenli başlangıç kaldıracı (ByBit'te max 25x genelde)
 
+SYMBOL_SETTINGS = {
+    'BTCUSDT': {'risk': 7.0, 'leverage': 10},
+    'ETHUSDT': {'risk': 7.0, 'leverage': 10},
+    'SOLUSDT': {'risk': 7.0, 'leverage': 8},
+    'XRPUSDT': {'risk': 7.0, 'leverage': 8},
+    'DOGEUSDT': {'risk': 7.0, 'leverage': 7},
+    '1000PEPEUSDT': {'risk': 7.0, 'leverage': 5},
+
 # Trading Ayarları
 POSITION_MODE = "Hedge"  # Varsayılan: OneWay (Hedge modu long/short aynı anda)
