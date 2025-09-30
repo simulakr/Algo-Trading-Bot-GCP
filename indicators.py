@@ -319,6 +319,7 @@ def calculate_indicators(df, symbol):
         df[f'dc_breakdown_{w}'] = df['low'] < df[f'dc_lower_{w}']
 
     df['trend_50_200'] = determine_sma_trend(df, short_window=50, long_window=200)
+    df['trend_13_50'] = determine_sma_trend(df, short_window=13, long_window=50)
 
     nw = calculate_nadaraya_watson_envelope_optimized(df)
     df[['nw', 'nw_upper', 'nw_lower']] = nw
