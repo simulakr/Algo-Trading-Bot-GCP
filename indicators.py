@@ -132,6 +132,116 @@ def classify_strength(row):
         else:
             return 'weak_bearish'
 
+def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1): 
+    closes = df[close_col].values
+    atrs = df[atr_col].values
+
+    high_pivot = [None] * len(df)
+    low_pivot = [None] * len(df)
+    high_pivot_atr = [None] * len(df)  # ATR değerini sakla
+    low_pivot_atr = [None] * len(df)   # ATR değerini sakla
+    high_pivot_confirmed = [0] * len(df)
+    low_pivot_confirmed = [0] * len(df)
+    pivot_bars_ago = [None] * len(df)
+
+    last_pivot = closes[0]
+    last_atr = atrs[0]
+    last_pivot_idx = 0
+    direction = None  # "up" veya "down"
+
+    for i in range(1, len(df)):
+        price = closes[i]
+        atr = atrs[i] * atr_mult  # ATR çarpanı uygulanıyor
+
+        if direction is None:
+            if price >= last_pivot + atr:
+                direction = "up"
+                last_pivot = closes[last_pivot_idx]
+                high_pivot[last_pivot_idx] = last_pivot
+                high_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]  # ATR değerini kaydet
+            elif price <= last_pivot - atr:
+                direction = "down"
+                last_pivot = closes[last_pivot_idx]
+                low_pivot[last_pivot_idx] = last_pivot
+                low_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]   # ATR değerini kaydet
+
+        elif direction == "up":
+            if price <= (last_pivot - atr):
+                # ✅ Tepe teyit edildi
+                high_pivot[last_pivot_idx] = last_pivot
+                high_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]  # ATR değerini kaydet
+                high_pivot_confirmed[i] = 1
+                pivot_bars_ago[i] = i - last_pivot_idx
+
+                direction = "down"
+                last_pivot = price
+                last_pivot_idx = i
+            elif price > last_pivot:
+                # Tepe güncelle, teyit etme
+                last_pivot = price
+                last_pivot_idx = i
+
+        elif direction == "down":
+            if price >= (last_pivot + atr):
+                # ✅ Dip teyit edildi
+                low_pivot[last_pivot_idx] = last_pivot
+                low_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]   # ATR değerini kaydet
+                low_pivot_confirmed[i] = 1
+                pivot_bars_ago[i] = i - last_pivot_idx
+
+                direction = "up"
+                last_pivot = price
+                last_pivot_idx = i
+            elif price < last_pivot:
+                # Dip güncelle, teyit etme
+                last_pivot = price
+                last_pivot_idx = i
+
+    # Önce orijinal sütunları oluştur
+    df["high_pivot"] = high_pivot
+    df["low_pivot"] = low_pivot
+    df["high_pivot_atr"] = high_pivot_atr
+    df["low_pivot_atr"] = low_pivot_atr
+    df["high_pivot_confirmed"] = high_pivot_confirmed
+    df["low_pivot_confirmed"] = low_pivot_confirmed
+    df["pivot_bars_ago"] = pivot_bars_ago
+
+    # NaN değerleri doldurma işlemleri
+    # high_pivot ve low_pivot için forward fill
+    df["high_pivot_filled"] = df["high_pivot"].ffill()
+    df["low_pivot_filled"] = df["low_pivot"].ffill()
+
+    # ATR değerleri için de forward fill
+    df["high_pivot_atr_filled"] = df["high_pivot_atr"].ffill()
+    df["low_pivot_atr_filled"] = df["low_pivot_atr"].ffill()
+
+    # high_pivot_confirmed ve low_pivot_confirmed için forward fill
+    # Burada 0/1 değerlerini korumak için özel bir yaklaşım
+    df["high_pivot_confirmed_filled"] = df["high_pivot_confirmed"].replace(to_replace=0, value=None).ffill().fillna(0).astype(int)
+    df["low_pivot_confirmed_filled"] = df["low_pivot_confirmed"].replace(to_replace=0, value=None).ffill().fillna(0).astype(int)
+
+    # pivot_bars_ago için özel doldurma - her satırda 1 artırarak
+    pivot_bars_filled = []
+    last_valid_value = None
+    last_valid_index = None
+
+    for i, value in enumerate(pivot_bars_ago):
+        if value is not None:
+            last_valid_value = value
+            last_valid_index = i
+            pivot_bars_filled.append(value)
+        elif last_valid_value is not None:
+            # NaN değeri, son geçerli değer + (mevcut index - son geçerli index)
+            new_value = last_valid_value + (i - last_valid_index)
+            pivot_bars_filled.append(new_value)
+        else:
+            # İlk değerler için
+            pivot_bars_filled.append(None)
+
+    df["pivot_bars_ago_filled"] = pivot_bars_filled
+
+    return df
+
 def bb_touch_signal(df, touch_count=1, trend_filter=False, trend_col='trend_50_200', trend_direction='uptrend'):
     """
     Bollinger Band üst/alt temasına göre sinyal üretir.
@@ -220,6 +330,15 @@ def calculate_indicators(df, symbol):
 
     df = add_adx(df)
     df['pct_atr'] = df['atr'] / df['close'] * 100
+
+    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3)
+    df['pivot_up'] = False
+    df['pivot_down'] = False
+    df.loc[(df['low_pivot_confirmed']) & (df['trend_13_50']== 'uptrend'), 'pivot_up'] = True
+    df.loc[(df['high_pivot_confirmed']) & (df['trend_13_50']== 'downtrend'), 'pivot_down'] = True
+    
+    df.loc[(df['pivot_up']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'atr_steps'] = 'long'
+    df.loc[(df['pivot_down']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'atr_steps'] = 'short' 
 
     # DC 50 breakout
     long_dc50, short_dc50 = dc_breakout_signal(df, 'dc_upper_50', 'dc_lower_50', trend_filter=True)
