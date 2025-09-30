@@ -12,8 +12,12 @@ SYMBOLS = ["SUIUSDT", "1000PEPEUSDT", "SOLUSDT"]  # ByBit'te mevcut çiftler
 INTERVAL = "15"  # ByBit formatında (15m için '15', 1h için '60')
 
 # Sembol bazlı ATR aralıkları
-atr_ranges = {'SOLUSDT':  (0.44, 0.84),
-              '1000PEPEUSDT':  (0.74, 1.3),
+atr_ranges = {'SOLUSDT':  (0.38, 1.05),
+              '1000PEPEUSDT':  (0.64, 1.53),
+              'BTCUSDT': (0.15, 0.57),
+               'ETHUSDT':  (0.285, 0.88),
+              'DOGEUSDT':  (0.41, 1.18),
+              'XRPUSDT':  (0.32, 1.27),
               'SUIUSDT': (0.61, 1.13)}
 
 # Quantity Hesabı İçin Ondalık Sayıları
