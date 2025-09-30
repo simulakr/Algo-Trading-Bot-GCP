@@ -8,7 +8,7 @@ BYBIT_API_KEY = os.getenv("BYBIT_API_KEY")
 BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET")
 
 # Sembol ve Zaman Aralığı Ayarları
-SYMBOLS = ["SUIUSDT", "1000PEPEUSDT", "SOLUSDT"]  # ByBit'te mevcut çiftler
+SYMBOLS = ['BTCUSDT', 'ETHUSDT','XRPUSDT','DOGEUSDT', "SUIUSDT", "1000PEPEUSDT", "SOLUSDT"]  # ByBit'te mevcut çiftler
 INTERVAL = "15"  # ByBit formatında (15m için '15', 1h için '60')
 
 # Sembol bazlı ATR aralıkları
