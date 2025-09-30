@@ -219,18 +219,16 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1):
     # Burada 0/1 değerlerini korumak için özel bir yaklaşım
     df["high_pivot_confirmed_filled"] = (
         df["high_pivot_confirmed"]
-        .replace(to_replace=0, value=None)
+        .replace(0, pd.NA)
         .ffill()
-        .infer_objects(copy=False)
         .fillna(0)
         .astype(int)
     )
     
     df["low_pivot_confirmed_filled"] = (
         df["low_pivot_confirmed"]
-        .replace(to_replace=0, value=None)
+        .replace(0, pd.NA)
         .ffill()
-        .infer_objects(copy=False)
         .fillna(0)
         .astype(int)
     )
