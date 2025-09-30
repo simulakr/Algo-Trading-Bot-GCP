@@ -57,7 +57,8 @@ SYMBOL_SETTINGS = {
     'SOLUSDT': {'risk': 7.0, 'leverage': 8},
     'XRPUSDT': {'risk': 7.0, 'leverage': 8},
     'DOGEUSDT': {'risk': 7.0, 'leverage': 7},
-    '1000PEPEUSDT': {'risk': 7.0, 'leverage': 5},
+    '1000PEPEUSDT': {'risk': 7.0, 'leverage': 5}
+}
 
 # Trading Ayarları
 POSITION_MODE = "Hedge"  # Varsayılan: OneWay (Hedge modu long/short aynı anda)
