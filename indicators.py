@@ -217,8 +217,23 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1):
 
     # high_pivot_confirmed ve low_pivot_confirmed için forward fill
     # Burada 0/1 değerlerini korumak için özel bir yaklaşım
-    df["high_pivot_confirmed_filled"] = (df["high_pivot_confirmed"].replace(to_replace=0, value=None).ffill().fillna(0).infer_objects(copy=False).astype(int))
-    df["low_pivot_confirmed_filled"] = (df["low_pivot_confirmed"].replace(to_replace=0, value=None).ffill().fillna(0).infer_objects(copy=False).astype(int))
+    df["high_pivot_confirmed_filled"] = (
+        df["high_pivot_confirmed"]
+        .replace(to_replace=0, value=None)
+        .ffill()
+        .infer_objects(copy=False)
+        .fillna(0)
+        .astype(int)
+    )
+    
+    df["low_pivot_confirmed_filled"] = (
+        df["low_pivot_confirmed"]
+        .replace(to_replace=0, value=None)
+        .ffill()
+        .infer_objects(copy=False)
+        .fillna(0)
+        .astype(int)
+    )
     
     # pivot_bars_ago için özel doldurma - her satırda 1 artırarak
     pivot_bars_filled = []
