@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 from config import atr_ranges
+import warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 # --- RSI ---
 def calculate_rsi(price_data, window=14, price_col='close'):
@@ -216,12 +218,12 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1):
     df["low_pivot_atr_filled"] = df["low_pivot_atr"].ffill()
 
     # High pivot
-    high_temp = df["high_pivot_confirmed"].replace(0, pd.NA)
+    high_temp = df["high_pivot_confirmed"].replace(0, pd.NA).astype('float64')
     high_temp = high_temp.ffill()
     df["high_pivot_confirmed_filled"] = high_temp.fillna(0).astype(int)
     
-    # Low pivot
-    low_temp = df["low_pivot_confirmed"].replace(0, pd.NA)
+    # Low pivot  
+    low_temp = df["low_pivot_confirmed"].replace(0, pd.NA).astype('float64')
     low_temp = low_temp.ffill()
     df["low_pivot_confirmed_filled"] = low_temp.fillna(0).astype(int)
     
