@@ -127,7 +127,7 @@ class ExitStrategy:
             self.logger.error(f"{symbol} TP/SL ayarlama hatası: {str(e)}")
             return False
 
-    def set_limit_tp_sl(self, symbol, direction, entry_price, tp_price, sl_price, quantity):
+    def set_limit_tp_sl(self, symbol, direction, tp_price, sl_price, quantity):
         """Normal limit emirlerle TP/SL simüle et"""
         try:
             tp_side = "Sell" if direction == "LONG" else "Buy"
