@@ -133,7 +133,7 @@ class ExitStrategy:
             tp_side = "Sell" if direction == "LONG" else "Buy"
             
             # TP için limit emri
-            tp_order = self.client.place_order(
+            tp_order = self.place_order(
                 category="linear",
                 symbol=symbol,
                 side=tp_side,
@@ -145,7 +145,7 @@ class ExitStrategy:
             )
             
             # SL için stop emri (daha güvenli)
-            sl_order = self.client.place_order(
+            sl_order = self.place_order(
                 category="linear", 
                 symbol=symbol,
                 side=tp_side,
