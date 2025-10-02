@@ -133,7 +133,7 @@ class ExitStrategy:
             tp_side = "Sell" if direction == "LONG" else "Buy"
             
             # TP için LIMIT emri (fiyat belirli, sıraya girer)
-            tp_order = self.client.place_order(
+            tp_order = self.place_order(  # self.client yerine self
                 category="linear",
                 symbol=symbol,
                 side=tp_side,
@@ -145,7 +145,7 @@ class ExitStrategy:
             )
             
             # SL için STOP-MARKET emri (triggerPrice'a ulaşınca market'ten kapanır)
-            sl_order = self.client.place_order(
+            sl_order = self.place_order(  # self.client yerine self
                 category="linear", 
                 symbol=symbol,
                 side=tp_side,
@@ -171,6 +171,8 @@ class ExitStrategy:
             
         except Exception as e:
             print(f"❌ Limit TP/SL hatası: {e}")
+            import traceback
+            traceback.print_exc()  # Detaylı hata mesajı için
             return {'success': False, 'error': str(e)}
     
     def _check_price_hit(self, position: Dict[str, Any]) -> bool:
