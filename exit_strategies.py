@@ -132,8 +132,8 @@ class ExitStrategy:
         try:
             tp_side = "Sell" if direction == "LONG" else "Buy"
             
-            # TP için LIMIT emri (fiyat belirli, sıraya girer)
-            tp_order = self.place_order(  # self.client yerine self
+            # TP için LIMIT emri
+            tp_order = self.client.place_order(
                 category="linear",
                 symbol=symbol,
                 side=tp_side,
@@ -144,15 +144,15 @@ class ExitStrategy:
                 timeInForce="GTC"
             )
             
-            # SL için STOP-MARKET emri (triggerPrice'a ulaşınca market'ten kapanır)
-            sl_order = self.place_order(  # self.client yerine self
+            # SL için STOP-MARKET emri
+            sl_order = self.client.place_order(
                 category="linear", 
                 symbol=symbol,
                 side=tp_side,
                 orderType="Market",
                 qty=str(quantity),
-                triggerPrice=str(sl_price),  # Bu fiyata ulaşınca tetiklenir
-                triggerBy="LastPrice",  # LastPrice, MarkPrice veya IndexPrice
+                triggerPrice=str(sl_price),
+                triggerBy="LastPrice",
                 reduceOnly=True
             )
             
