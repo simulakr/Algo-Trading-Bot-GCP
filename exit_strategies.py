@@ -132,6 +132,10 @@ class ExitStrategy:
         try:
             tp_side = "Sell" if direction == "LONG" else "Buy"
             
+            # LONG için: fiyat düşerse SL (1=rise, 2=fall)
+            # SHORT için: fiyat yükselirse SL
+            trigger_direction = 2 if direction == "LONG" else 1
+            
             # TP için LIMIT emri
             tp_order = self.client.place_order(
                 category="linear",
@@ -152,6 +156,7 @@ class ExitStrategy:
                 orderType="Market",
                 qty=str(quantity),
                 triggerPrice=str(sl_price),
+                triggerDirection=trigger_direction,  # EKLENDI: 1=rise, 2=fall
                 triggerBy="LastPrice",
                 reduceOnly=True
             )
