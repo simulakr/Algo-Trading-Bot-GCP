@@ -90,13 +90,52 @@ class PositionManager:
         except Exception as e:
             logger.error(f"{symbol} pozisyon açma hatası: {str(e)}")
             return None
-
-    def _calculate_position_size(self, symbol: str, entry_price: float) -> str:
-        """Sabit risk miktarına göre her sembol için quantity döndürür"""
-        raw_quantity = RISK_PER_TRADE_USDT * LEVERAGE / entry_price
-        quantity = round(raw_quantity, ROUND_NUMBERS[symbol])
-        return str(quantity)
-
+    
+    
+    def _update_tp_sl_only(self, symbol: str, direction: str, entry_price: float, atr_value: float, pct_atr: float) -> Optional[Dict]:
+        """
+        Mevcut pozisyonun sadece TP/SL'sini günceller (Senaryo 2a)
+        """
+        try:
+            position = self.active_positions[symbol]
+            
+            # Eski TP/SL emirlerini iptal et
+            if 'oco_pair' in position:
+                logger.info(f"{symbol} eski TP/SL emirleri iptal ediliyor...")
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
+            
+            # Yeni TP/SL seviyelerini hesapla
+            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
+            logger.info(f"{symbol} Yeni TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
+            
+            # Yeni limit TP/SL emirlerini gönder
+            tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+                symbol=symbol,
+                direction=direction,
+                tp_price=tp_price,
+                sl_price=sl_price,
+                quantity=position['quantity']
+            )
+            
+            if tp_sl_result.get('success'):
+                # Pozisyon bilgilerini güncelle
+                position['take_profit'] = tp_price
+                position['stop_loss'] = sl_price
+                position['current_pct_atr'] = pct_atr
+                position['oco_pair'] = tp_sl_result['oco_pair']
+                
+                logger.info(f"{symbol} TP/SL başarıyla güncellendi")
+                return position
+            else:
+                logger.error(f"{symbol} TP/SL güncellenemedi")
+                return None
+                
+        except Exception as e:
+            logger.error(f"{symbol} TP/SL güncelleme hatası: {str(e)}")
+            return None
+    
+    
     def close_position(self, symbol: str, reason: str = "MANUAL") -> bool:
         """
         Pozisyonu kapatır ve TP/SL emirlerini iptal eder
@@ -141,48 +180,11 @@ class PositionManager:
             logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
             return False
 
-    def _update_tp_sl_only(self, symbol: str, direction: str, entry_price: float, atr_value: float, pct_atr: float) -> Optional[Dict]:
-        """
-        Mevcut pozisyonun sadece TP/SL'sini günceller (Senaryo 2a)
-        """
-        try:
-            position = self.active_positions[symbol]
-            
-            # Eski TP/SL emirlerini iptal et
-            if 'oco_pair' in position:
-                logger.info(f"{symbol} eski TP/SL emirleri iptal ediliyor...")
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
-            
-            # Yeni TP/SL seviyelerini hesapla
-            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
-            logger.info(f"{symbol} Yeni TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
-            
-            # Yeni limit TP/SL emirlerini gönder
-            tp_sl_result = self.exit_strategy.set_limit_tp_sl(
-                symbol=symbol,
-                direction=direction,
-                tp_price=tp_price,
-                sl_price=sl_price,
-                quantity=position['quantity']
-            )
-            
-            if tp_sl_result.get('success'):
-                # Pozisyon bilgilerini güncelle
-                position['take_profit'] = tp_price
-                position['stop_loss'] = sl_price
-                position['current_pct_atr'] = pct_atr
-                position['oco_pair'] = tp_sl_result['oco_pair']
-                
-                logger.info(f"{symbol} TP/SL başarıyla güncellendi")
-                return position
-            else:
-                logger.error(f"{symbol} TP/SL güncellenemedi")
-                return None
-                
-        except Exception as e:
-            logger.error(f"{symbol} TP/SL güncelleme hatası: {str(e)}")
-            return None
+    def _calculate_position_size(self, symbol: str, entry_price: float) -> str:
+        """Sabit risk miktarına göre her sembol için quantity döndürür"""
+        raw_quantity = RISK_PER_TRADE_USDT * LEVERAGE / entry_price
+        quantity = round(raw_quantity, ROUND_NUMBERS[symbol])
+        return str(quantity)
         
     def manage_positions(self, signals: Dict[str, Optional[str]], all_data: Dict[str, Optional[Dict]]) -> None:
         """
