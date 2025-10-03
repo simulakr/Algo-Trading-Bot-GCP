@@ -156,39 +156,3 @@ class ExitStrategy:
         except Exception as e:
             print(f"❌ İptal hatası: {e}")
             return None
-    
-    def _check_price_hit(self, position: Dict[str, Any]) -> bool:
-        """ByBit'te fiyat kontrolü"""
-        try:
-            ticker = self.client.get_tickers(
-                category="linear",
-                symbol=position['symbol']
-            )
-            current_price = float(ticker['result']['list'][0]['lastPrice'])
-            
-            tp = position.get('take_profit')
-            sl = position.get('stop_loss')
-            
-            # None kontrolü
-            if tp is None and sl is None:
-                return False
-            
-            if position['direction'] == 'LONG':
-                # TP kontrolü
-                if tp is not None and current_price >= tp:
-                    return True
-                # SL kontrolü  
-                if sl is not None and current_price <= sl:
-                    return True
-            else:  # SHORT
-                # TP kontrolü
-                if tp is not None and current_price <= tp:
-                    return True
-                # SL kontrolü
-                if sl is not None and current_price >= sl:
-                    return True
-                    
-            return False
-        except Exception as e:
-            self.logger.error(f"{position['symbol']} fiyat kontrol hatası: {str(e)}")
-            return False
