@@ -151,45 +151,36 @@ class TradingBot:
         return signals
 
     def _execute_trades(self, signals: Dict[str, Optional[str]], all_data: Dict[str, Optional[Dict]]):
-        """Sinyallere göre işlem aç veya güncelle"""
+        """
+        Sinyallere göre işlem aç
+        NOT: TP/SL güncellemesi artık manage_positions() içinde yapılıyor
+        """
         for symbol, signal in signals.items():
             if not signal or not all_data.get(symbol):
                 continue
     
             data = all_data[symbol]
             
-            if self.position_manager.has_active_position(symbol):
-                current_pos = self.position_manager.get_active_position(symbol)
-                
-                if current_pos['direction'] == signal:
-                    # AYNI YÖNDE sinyal - TP/SL güncelle
-                    self.position_manager.update_existing_position(symbol, data)
-                else:
-                    # TERS YÖNDE sinyal - Öncekini kapat, yeniyi aç
-                    self.position_manager.close_position(symbol, "REVERSE_SIGNAL")
-                    time.sleep(1)  # 1 saniye bekle
-                    self.position_manager.open_position(
-                        symbol=symbol,
-                        direction=signal,
-                        entry_price=data['close'],
-                        atr_value=data['atr'],
-                        pct_atr=data['pct_atr']
-                    )
-            else:
-                # YENİ işlem aç
-                self.position_manager.open_position(
-                    symbol=symbol,
-                    direction=signal,
-                    entry_price=data['close'],
-                    atr_value=data['atr'],
-                    pct_atr=data['pct_atr']
-                )
-
+            # Yeni pozisyon veya ters sinyal durumunda open_position çağır
+            # open_position içinde zaten tüm senaryolar yönetiliyor:
+            # - Pozisyon yoksa: Yeni açar (Senaryo 1)
+            # - Aynı yön: TP/SL günceller (Senaryo 2a)
+            # - Ters yön: Eski kapatır, yeni açar (Senaryo 2b)
+            
+            self.position_manager.open_position(
+                symbol=symbol,
+                direction=signal,
+                entry_price=data['close'],
+                atr_value=data['atr'],
+                pct_atr=data['pct_atr']
+            )
+    
+    
     def run(self):
         """Ana çalıştırma döngüsü"""
         
         logger.info(f"Bot başlatıldı | Semboller: {self.symbols} | Zaman Aralığı: {self.interval}m")
-
+        
         while True:
             try:
                 # 15 dakika senkronizasyonu
@@ -201,14 +192,17 @@ class TradingBot:
                 all_data = self._get_market_data_batch()
                 signals = self._generate_signals(all_data)
                 
-                # Pozisyon yönetimi ve işlemler
+                # 1. Pozisyon yönetimi (OCO kontrol + TP/SL güncelleme)
                 self.position_manager.manage_positions(signals, all_data)
+                
+                # 2. Yeni pozisyonlar veya pozisyon güncellemeleri
                 self._execute_trades(signals, all_data)
-
+                
                 elapsed = time.time() - start_time
                 server_time_response = self.api.session.get_server_time()
                 timestamp = int(server_time_response['result']['timeSecond'])
                 server_time = datetime.datetime.fromtimestamp(timestamp).strftime("%H:%M:%S.%f")[:-4]
+                
                 logger.info(f"İşlem turu tamamlandı | Süre: {elapsed:.2f}s | Tamamlanma Saati: {server_time}")
                 
             except KeyboardInterrupt:
