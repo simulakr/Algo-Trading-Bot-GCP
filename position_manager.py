@@ -135,3 +135,16 @@ class PositionManager:
 
     def has_active_position(self, symbol: str) -> bool:
         return symbol in self.active_positions
+
+    def monitor_oco_orders(self):
+        """
+        Tüm aktif pozisyonların OCO emirlerini kontrol eder
+        """
+        for symbol, position in list(self.active_positions.items()):
+            if 'oco_pair' in position and position['oco_pair']['active']:
+                result = self.exit_strategy.check_and_cancel_oco(position['oco_pair'])
+                
+                if result.get('triggered'):
+                    logger.info(f"{symbol} {result['triggered']} tetiklendi - Pozisyon kapatıldı")
+                    # Pozisyonu listeden çıkar
+                    del self.active_positions[symbol]
