@@ -108,7 +108,8 @@ class TradingBot:
                 else:  # 14
                     target_time = target_time.replace(minute=29)
             
-            wait_seconds = (target_time.timestamp() - current_time.timestamp())        
+            wait_seconds = (target_time.timestamp() - current_time.timestamp())
+            logger.info(f"DEBUG: minute={minute}, target_minute={target_minute}, current={current_time.strftime('%H:%M:%S')}, target={target_time.strftime('%H:%M:%S')}, wait_seconds={wait_seconds:.2f}")
             time.sleep(max(wait_seconds, 2))
             
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
