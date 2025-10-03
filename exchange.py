@@ -67,7 +67,7 @@ class BybitFuturesAPI:  # Sınıf adı değişti
         self,
         symbols: List[str],
         interval: str = '15',
-        limit: int = 500
+        limit: int = 300
     ) -> Dict[str, pd.DataFrame]:
         """Birden fazla sembol için veri çeker"""
         return {sym: self.get_ohlcv(sym, interval, limit) for sym in symbols}
