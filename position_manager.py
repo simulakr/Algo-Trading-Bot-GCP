@@ -184,14 +184,63 @@ class PositionManager:
             logger.error(f"{symbol} TP/SL güncelleme hatası: {str(e)}")
             return None
         
-    # Requires OCO func.   
     def manage_positions(self, signals: Dict[str, Optional[str]], all_data: Dict[str, Optional[Dict]]) -> None:
-        """Tüm aktif pozisyonları yönetir (Binance versiyonuyla aynı)"""
+        """
+        Tüm aktif pozisyonları yönetir
+        - OCO kontrolü yapar (TP/SL tetiklenmesi)
+        - Ters sinyal gelirse pozisyonu kapatır
+        - Aynı yönde sinyal gelirse TP/SL günceller
+        """
+        # 1. OCO kontrolü - TP/SL tetiklenmeleri (Senaryo 3)
+        self.monitor_oco_orders()
+        
+        # 2. Sinyal bazlı kontroller
         for symbol, position in list(self.active_positions.items()):
+            current_signal = signals.get(symbol)
             current_data = all_data.get(symbol)
-            result = self.exit_strategy.manage_position(position, signals.get(symbol), current_data)
-            if "CLOSED" in result:
-                del self.active_positions[symbol]
+            current_direction = position['direction']
+            
+            # Ters sinyal geldi mi? (Senaryo 2b)
+            if current_signal and current_signal != current_direction:
+                logger.info(f"{symbol} ters sinyal alındı ({current_direction} → {current_signal})")
+                # open_position içinde zaten hallediliyor, buradan sadece kapatıyoruz
+                # Yeni pozisyon open_position'da açılacak
+                continue  # open_position çağrılacak main loop'ta
+            
+            # Aynı yönde sinyal + yeni data var mı? (Senaryo 2a - TP/SL güncelleme)
+            if current_signal and current_data and current_signal == current_direction:
+                logger.info(f"{symbol} aynı yönde sinyal - TP/SL güncelleniyor")
+                
+                # Yeni TP/SL hesapla
+                new_tp, new_sl = self.exit_strategy.calculate_levels(
+                    current_data['close'],
+                    current_data['atr'],
+                    current_direction,
+                    symbol
+                )
+                
+                # Eski TP/SL'yi iptal et
+                if 'oco_pair' in position:
+                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
+                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
+                
+                # Yeni TP/SL koy
+                tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+                    symbol=symbol,
+                    direction=current_direction,
+                    tp_price=new_tp,
+                    sl_price=new_sl,
+                    quantity=position['quantity']
+                )
+                
+                if tp_sl_result.get('success'):
+                    # Pozisyonu güncelle
+                    position['entry_price'] = current_data['close']
+                    position['take_profit'] = new_tp
+                    position['stop_loss'] = new_sl
+                    position['oco_pair'] = tp_sl_result['oco_pair']
+                    logger.info(f"{symbol} TP/SL güncellendi | TP: {new_tp} | SL: {new_sl}")
+
 
     def get_active_position(self, symbol: str) -> Optional[Dict]:
         return self.active_positions.get(symbol)
@@ -201,13 +250,14 @@ class PositionManager:
 
     def monitor_oco_orders(self):
         """
-        Tüm aktif pozisyonların OCO emirlerini kontrol eder
+        Tüm aktif pozisyonların OCO emirlerini kontrol eder (Senaryo 3)
+        TP veya SL tetiklenirse diğerini iptal eder ve pozisyonu siler
         """
         for symbol, position in list(self.active_positions.items()):
-            if 'oco_pair' in position and position['oco_pair']['active']:
-                result = self.exit_strategy.check_and_cancel_oco(position['oco_pair'])
+            if 'oco_pair' not in position:
+                continue
                 
-                if result.get('triggered'):
-                    logger.info(f"{symbol} {result['triggered']} tetiklendi - Pozisyon kapatıldı")
-                    # Pozisyonu listeden çıkar
-                    del self.active_positions[symbol]
+            oco_pair = position['oco_pair']
+            
+            if not oco_pair.get('active'):
+                continue
