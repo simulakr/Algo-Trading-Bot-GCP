@@ -69,7 +69,7 @@ class TradingBot:
         except Exception as e:
             logger.error(f"Mevcut pozisyonlar yüklenirken hata: {e}")
     
-    def _wait_until_next_candle(self):
+    def wait_until_next_candle(self):
         """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle - Saatin çeyreklerinden 1 saniye önce"""
         try:
             # Bybit sunucu zamanını al
@@ -77,7 +77,7 @@ class TradingBot:
             ts = int(server_time['result']['timeSecond']) * 1000  # Unix timestamp milisaniye
             
             # Mevcut zamanı datetime'a çevir
-            from datetime import datetime, timezone
+            from datetime import datetime, timezone, timedelta
             current_time = datetime.fromtimestamp(ts / 1000, timezone.utc)
             
             # Bir sonraki çeyrek dakikayı hesapla (XX:14, XX:29, XX:44, XX:59)
@@ -85,32 +85,48 @@ class TradingBot:
             
             if minute < 14:
                 target_minute = 14
+                target_hour = current_time.hour
             elif minute < 29:
                 target_minute = 29
+                target_hour = current_time.hour
             elif minute < 44:
                 target_minute = 44
+                target_hour = current_time.hour
             elif minute < 59:
                 target_minute = 59
-            else:
+                target_hour = current_time.hour
+            else:  # minute >= 59
                 # Bir sonraki saatin 14. dakikası
                 target_minute = 14
-                current_time = current_time.replace(hour=current_time.hour + 1)
+                target_hour = current_time.hour + 1
+                # Saat 23'ten 0'a geçiş kontrolü
+                if target_hour >= 24:
+                    target_hour = 0
             
-            target_time = current_time.replace(minute=target_minute, second=59,  microsecond=0)
+            # Target time'ı oluştur
+            target_time = current_time.replace(
+                hour=target_hour,
+                minute=target_minute, 
+                second=59, 
+                microsecond=0
+            )
             
-            if target_time <= current_time:
-                if target_minute == 59:
-                    target_time = target_time.replace(hour=target_time.hour + 1, minute=14)
-                elif target_minute == 44:
-                    target_time = target_time.replace(minute=59)
-                elif target_minute == 29:
-                    target_time = target_time.replace(minute=44)
-                else:  # 14
-                    target_time = target_time.replace(minute=29)
+            # Gün değişimi kontrolü (23:59 sonrası 00:14'e geçiş)
+            if target_hour == 0 and current_time.hour == 23:
+                target_time = target_time + timedelta(days=1)
             
+            # Bekleme süresini hesapla
             wait_seconds = (target_time.timestamp() - current_time.timestamp())
+            
+            # DEBUG log
             logger.info(f"DEBUG: minute={minute}, target_minute={target_minute}, current={current_time.strftime('%H:%M:%S')}, target={target_time.strftime('%H:%M:%S')}, wait_seconds={wait_seconds:.2f}")
-            time.sleep(max(wait_seconds, 2))
+            
+            # Güvenli bekleme (minimum 1 saniye)
+            if wait_seconds > 0:
+                time.sleep(wait_seconds)
+            else:
+                logger.warning(f"UYARI: wait_seconds negatif ({wait_seconds:.2f}s)! 1 saniye bekleniyor...")
+                time.sleep(1)
             
             logger.info("Yeni mum başladı - Veriler çekiliyor...")
             
