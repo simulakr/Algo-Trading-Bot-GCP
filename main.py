@@ -69,7 +69,7 @@ class TradingBot:
         except Exception as e:
             logger.error(f"Mevcut pozisyonlar yüklenirken hata: {e}")
     
-    def wait_until_next_candle(self):
+    def _wait_until_next_candle(self):
         """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle - Saatin çeyreklerinden 1 saniye önce"""
         try:
             # Bybit sunucu zamanını al
