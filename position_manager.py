@@ -263,3 +263,11 @@ class PositionManager:
             
             if not oco_pair.get('active'):
                 continue
+            
+            # ← BURASI EKSİKTİ! ←
+            result = self.exit_strategy.check_and_cancel_oco(oco_pair)
+            
+            if result.get('triggered'):
+                logger.info(f"{symbol} {result['triggered']} tetiklendi - Pozisyon otomatik kapatıldı")
+                # Pozisyonu listeden çıkar
+                del self.active_positions[symbol]
