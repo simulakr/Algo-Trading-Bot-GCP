@@ -46,7 +46,7 @@ class TradingBot:
                     logger.warning(f"{symbol} kaldıraç ayarlama uyarısı: {str(e)}")
 
     def _load_existing_positions(self):
-        """Bybit'teki mevcut pozisyonları bot hafızasına yükle"""
+        """Bybit'teki mevcut pozisyonları bot hafızasına yükle (TP/SL emirleri dahil)"""
         try:
             positions = self.api.session.get_positions(category='linear', settleCoin='USDT')
             if positions['retCode'] == 0:
@@ -54,20 +54,127 @@ class TradingBot:
                     if float(pos.get('size', 0)) > 0:  # Açık pozisyon varsa
                         symbol = pos['symbol']
                         direction = 'LONG' if pos['side'] == 'Buy' else 'SHORT'
+                        quantity = float(pos['size'])
+                        
+                        # Açık emirleri çek (TP/SL emirlerini bul)
+                        oco_pair = self._find_tp_sl_orders(symbol, direction, quantity)
                         
                         # Bot hafızasına ekle
-                        self.position_manager.active_positions[symbol] = {
+                        position_data = {
                             'symbol': symbol,
                             'direction': direction,
                             'entry_price': float(pos['avgPrice']),
-                            'quantity': float(pos['size']),
+                            'quantity': quantity,
                             'take_profit': float(pos['takeProfit']) if pos['takeProfit'] else None,
                             'stop_loss': float(pos['stopLoss']) if pos['stopLoss'] else None,
-                            'order_id': None  # API'den alınamadığı için None
+                            'order_id': None
                         }
-                        logger.info(f"{symbol} mevcut pozisyon hafızaya yüklendi: {direction}")
+                        
+                        # OCO pair varsa ekle
+                        if oco_pair:
+                            position_data['oco_pair'] = oco_pair
+                            logger.info(f"{symbol} pozisyon + TP/SL emirleri yüklendi: {direction}")
+                        else:
+                            logger.warning(f"{symbol} pozisyon yüklendi ama TP/SL emirleri bulunamadı")
+                        
+                        self.position_manager.active_positions[symbol] = position_data
+                        
         except Exception as e:
             logger.error(f"Mevcut pozisyonlar yüklenirken hata: {e}")
+    
+    
+    def _find_tp_sl_orders(self, symbol: str, direction: str, quantity: float) -> Optional[Dict]:
+        """
+        Belirli bir pozisyon için açık TP/SL emirlerini bulur ve OCO pair oluşturur
+        """
+        try:
+            # Açık emirleri çek
+            orders = self.api.session.get_open_orders(
+                category='linear',
+                symbol=symbol
+            )
+            
+            if orders['retCode'] != 0:
+                return None
+            
+            tp_order_id = None
+            sl_order_id = None
+            expected_side = "Sell" if direction == "LONG" else "Buy"
+            
+            # TP ve SL emirlerini bul
+            for order in orders['result']['list']:
+                if order['side'] != expected_side:
+                    continue
+                
+                order_qty = float(order['qty'])
+                # Miktar eşleşmesi (küçük farkları tolere et)
+                if abs(order_qty - quantity) > quantity * 0.01:  # %1 tolerans
+                    continue
+                
+                # Limit emir = TP
+                if order['orderType'] == 'Limit' and order.get('reduceOnly'):
+                    tp_order_id = order['orderId']
+                
+                # Stop/Market emir = SL
+                elif order['orderType'] == 'Market' and order.get('triggerPrice'):
+                    sl_order_id = order['orderId']
+            
+            # Her iki emir de bulunduysa OCO pair oluştur
+            if tp_order_id and sl_order_id:
+                return {
+                    'symbol': symbol,
+                    'tp_order_id': tp_order_id,
+                    'sl_order_id': sl_order_id,
+                    'active': True
+                }
+            else:
+                logger.warning(f"{symbol} TP/SL emirleri eksik - TP: {tp_order_id}, SL: {sl_order_id}")
+                return None
+                
+        except Exception as e:
+            logger.error(f"{symbol} TP/SL emirleri aranırken hata: {e}")
+            return None
+        """
+        Mevcut pozisyonun sadece TP/SL'sini günceller (Senaryo 2a)
+        """
+        try:
+            position = self.active_positions[symbol]
+            
+            # Eski TP/SL emirlerini iptal et
+            if 'oco_pair' in position:
+                logger.info(f"{symbol} eski TP/SL emirleri iptal ediliyor...")
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
+            
+            # Yeni TP/SL seviyelerini hesapla
+            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
+            logger.info(f"{symbol} Yeni TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
+            
+            # Yeni limit TP/SL emirlerini gönder
+            tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+                symbol=symbol,
+                direction=direction,
+                tp_price=tp_price,
+                sl_price=sl_price,
+                quantity=position['quantity']
+            )
+            
+            if tp_sl_result.get('success'):
+                # Pozisyon bilgilerini güncelle
+                position['take_profit'] = tp_price
+                position['stop_loss'] = sl_price
+                position['current_pct_atr'] = pct_atr
+                position['oco_pair'] = tp_sl_result['oco_pair']
+                
+                logger.info(f"{symbol} TP/SL başarıyla güncellendi")
+                return position
+            else:
+                logger.error(f"{symbol} TP/SL güncellenemedi")
+                return None
+                
+        except Exception as e:
+            logger.error(f"{symbol} TP/SL güncelleme hatası: {str(e)}")
+            return None
     
     def _wait_until_next_candle(self):
         """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle - Saatin çeyreklerinden 1 saniye önce"""
