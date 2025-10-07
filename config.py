@@ -8,7 +8,7 @@ BYBIT_API_KEY = os.getenv("BYBIT_API_KEY")
 BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET")
 
 # Sembol ve Zaman Aralığı Ayarları
-SYMBOLS = ['BTCUSDT', 'ETHUSDT','XRPUSDT','DOGEUSDT', "SUIUSDT", "1000PEPEUSDT", "SOLUSDT"]  # ByBit'te mevcut çiftler
+SYMBOLS = ['BTCUSDT', 'ETHUSDT','XRPUSDT','DOGEUSDT',  "1000PEPEUSDT", "SOLUSDT"]  # ByBit'te mevcut çiftler "SUIUSDT"
 INTERVAL = "15"  # ByBit formatında (15m için '15', 1h için '60')
 
 # Sembol bazlı ATR aralıkları
@@ -17,8 +17,8 @@ atr_ranges = {'SOLUSDT':  (0.38, 1.05),
               'BTCUSDT': (0.15, 0.57),
                'ETHUSDT':  (0.285, 0.88),
               'DOGEUSDT':  (0.41, 1.18),
-              'XRPUSDT':  (0.32, 1.27),
-              'SUIUSDT': (0.61, 1.13)}
+              'XRPUSDT':  (0.32, 1.27), #'SUIUSDT': (0.61, 1.13)
+              }
 
 # Quantity Hesabı İçin Ondalık Sayıları
 ROUND_NUMBERS = {
@@ -48,17 +48,17 @@ TP_ROUND_NUMBERS = {
 }
 
 # Risk Yönetimi
-RISK_PER_TRADE_USDT = 6.0  # Her işlemde sabit 5 USDT risk
-LEVERAGE = 10  # Daha güvenli başlangıç kaldıracı (ByBit'te max 25x genelde)
-DEFAULT_LEVERAGE = 10
+RISK_PER_TRADE_USDT = 60.0  # Her işlemde sabit 60 USDT risk
+LEVERAGE = 25  # (ByBit'te max 25x genelde)
+DEFAULT_LEVERAGE = 25
 
 SYMBOL_SETTINGS = {
-    'BTCUSDT': {'risk': 7.0, 'leverage': 10},
-    'ETHUSDT': {'risk': 7.0, 'leverage': 10},
-    'SOLUSDT': {'risk': 7.0, 'leverage': 8},
-    'XRPUSDT': {'risk': 7.0, 'leverage': 8},
-    'DOGEUSDT': {'risk': 7.0, 'leverage': 7},
-    '1000PEPEUSDT': {'risk': 7.0, 'leverage': 5}
+    'BTCUSDT': {'risk': 100.0, 'leverage': 25},
+    'ETHUSDT': {'risk': 120.0, 'leverage': 25},
+    'SOLUSDT': {'risk': 100.0, 'leverage': 25},
+    'XRPUSDT': {'risk': 100.0, 'leverage': 25},
+    'DOGEUSDT': {'risk': 80.0, 'leverage': 25},
+    '1000PEPEUSDT': {'risk': 60.0, 'leverage': 25}
 }
 
 # Trading Ayarları
