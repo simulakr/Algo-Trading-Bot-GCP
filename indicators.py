@@ -339,13 +339,21 @@ def calculate_indicators(df, symbol):
     df['pct_atr'] = df['atr'] / df['close'] * 100
 
     df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3)
+    
     df['pivot_up'] = False
     df['pivot_down'] = False
-    df.loc[(df['low_pivot_confirmed']) & (df['trend_13_50']== 'uptrend'), 'pivot_up'] = True
-    df.loc[(df['high_pivot_confirmed']) & (df['trend_13_50']== 'downtrend'), 'pivot_down'] = True
+    df.loc[(df['low_pivot_confirmed']) & (df['trend_13_50']== 'uptrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_up'] = True
+    df.loc[(df['high_pivot_confirmed']) & (df['trend_13_50']== 'downtrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_down'] = True
+
+    df['entry_atr_steps_l'] = np.nan
+    df.loc[df['pivot_up'], 'entry_atr_steps_l'] = ((df.loc[df['pivot_up'], 'close'] - df.loc[df['pivot_up'], 'low_pivot_filled'] ) / df.loc[df['pivot_up'], 'atr'])
     
-    df.loc[(df['pivot_up']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'atr_steps'] = 'long'
-    df.loc[(df['pivot_down']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'atr_steps'] = 'short' 
+    df['entry_atr_steps_s'] = np.nan
+    df.loc[df['pivot_down'], 'entry_atr_steps_s'] = ((df.loc[df['pivot_down'], 'high_pivot_filled'] - df.loc[df['pivot_down'], 'close']) / df.loc[df['pivot_down'], 'atr'])
+
+    
+    df.loc[(df['pivot_up']) & (df['entry_atr_steps_l'] < 3.75), 'atr_steps'] = 'long'
+    df.loc[(df['pivot_down']) & (df['entry_atr_steps_s'] < 3.75), 'atr_steps'] = 'short' 
 
     # DC 50 breakout
     long_dc50, short_dc50 = dc_breakout_signal(df, 'dc_upper_50', 'dc_lower_50', trend_filter=True)
