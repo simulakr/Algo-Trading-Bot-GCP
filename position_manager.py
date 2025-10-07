@@ -252,22 +252,27 @@ class PositionManager:
 
     def monitor_oco_orders(self):
         """
-        Tüm aktif pozisyonların OCO emirlerini kontrol eder (Senaryo 3)
-        TP veya SL tetiklenirse diğerini iptal eder ve pozisyonu siler
+        Tüm aktif pozisyonların OCO emirlerini kontrol eder
         """
+        print(f"[DEBUG] monitor_oco_orders çalışıyor - Pozisyon sayısı: {len(self.active_positions)}")  # ← EKLE
+        
         for symbol, position in list(self.active_positions.items()):
+            print(f"[DEBUG] {symbol} kontrol ediliyor...")  # ← EKLE
+            
             if 'oco_pair' not in position:
+                print(f"[DEBUG] {symbol} - oco_pair yok, atlandı")  # ← EKLE
                 continue
                 
             oco_pair = position['oco_pair']
             
             if not oco_pair.get('active'):
+                print(f"[DEBUG] {symbol} - oco_pair aktif değil, atlandı")  # ← EKLE
                 continue
             
-            # ← BURASI EKSİKTİ! ←
+            print(f"[DEBUG] {symbol} - check_and_cancel_oco çağrılıyor...")  # ← EKLE
             result = self.exit_strategy.check_and_cancel_oco(oco_pair)
+            print(f"[DEBUG] {symbol} - Sonuç: {result}")  # ← EKLE
             
             if result.get('triggered'):
                 logger.info(f"{symbol} {result['triggered']} tetiklendi - Pozisyon otomatik kapatıldı")
-                # Pozisyonu listeden çıkar
                 del self.active_positions[symbol]
