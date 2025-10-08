@@ -2,7 +2,7 @@ from typing import Dict, Optional, Any
 from pybit.unified_trading import HTTP
 from exit_strategies import ExitStrategy
 import logging
-from config import LEVERAGE, RISK_PER_TRADE_USDT, ROUND_NUMBERS
+from config import LEVERAGE, RISK_PER_TRADE_USDT, ROUND_NUMBERS, DEFAULT_LEVERAGE, SYMBOL_SETTINGS
 
 logger = logging.getLogger(__name__)
 
