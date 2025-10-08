@@ -48,7 +48,7 @@ TP_ROUND_NUMBERS = {
 }
 
 # Risk Yönetimi
-RISK_PER_TRADE_USDT = 40.0  # Her işlemde sabit 20 USDT risk
+RISK_PER_TRADE_USDT = 70.0  # Her işlemde sabit 20 USDT risk
 LEVERAGE = 25  # (ByBit'te max 25x genelde)
 DEFAULT_LEVERAGE = 25
 
