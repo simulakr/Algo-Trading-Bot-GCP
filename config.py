@@ -48,17 +48,17 @@ TP_ROUND_NUMBERS = {
 }
 
 # Risk Yönetimi
-RISK_PER_TRADE_USDT = 60.0  # Her işlemde sabit 60 USDT risk
-LEVERAGE = 25  # (ByBit'te max 25x genelde)
-DEFAULT_LEVERAGE = 25
+RISK_PER_TRADE_USDT = 7.0  # Her işlemde sabit 60 USDT risk
+LEVERAGE = 10  # (ByBit'te max 25x genelde)
+DEFAULT_LEVERAGE = 10
 
 SYMBOL_SETTINGS = {
-    'BTCUSDT': {'risk': 100.0, 'leverage': 25},
-    'ETHUSDT': {'risk': 120.0, 'leverage': 25},
-    'SOLUSDT': {'risk': 100.0, 'leverage': 25},
-    'XRPUSDT': {'risk': 100.0, 'leverage': 25},
-    'DOGEUSDT': {'risk': 80.0, 'leverage': 25},
-    '1000PEPEUSDT': {'risk': 60.0, 'leverage': 25}
+    'BTCUSDT': {'risk': 8.0, 'leverage': 10},
+    'ETHUSDT': {'risk': 8.0, 'leverage': 10},
+    'SOLUSDT': {'risk': 8.0, 'leverage': 10},
+    'XRPUSDT': {'risk': 8.0, 'leverage': 10},
+    'DOGEUSDT': {'risk': 8.0, 'leverage': 10},
+    '1000PEPEUSDT': {'risk': 6.0, 'leverage': 10}
 }
 
 # Trading Ayarları
