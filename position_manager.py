@@ -181,9 +181,27 @@ class PositionManager:
             return False
 
     def _calculate_position_size(self, symbol: str, entry_price: float) -> str:
-        """Sabit risk miktarına göre her sembol için quantity döndürür"""
-        raw_quantity = RISK_PER_TRADE_USDT * LEVERAGE / entry_price
+        """
+        Sembol bazlı risk ve kaldıraç ayarlarına göre pozisyon büyüklüğü hesaplar
+        """
+        # Sembol ayarlarını al, yoksa default değerleri kullan
+        symbol_config = SYMBOL_SETTINGS.get(symbol, {})
+        risk_amount = symbol_config.get('risk', RISK_PER_TRADE_USDT)  # Fallback için
+        leverage = symbol_config.get('leverage', DEFAULT_LEVERAGE)
+        
+        # Pozisyon büyüklüğünü hesapla
+        # Formula: (Risk Amount * Leverage) / Entry Price
+        raw_quantity = (risk_amount * leverage) / entry_price
+        
+        # Sembole göre yuvarlama hassasiyeti
         quantity = round(raw_quantity, ROUND_NUMBERS[symbol])
+        
+        self.logger.info(
+            f"{symbol} pozisyon hesaplandı | "
+            f"Risk: ${risk_amount} | Leverage: {leverage}x | "
+            f"Entry: ${entry_price:.2f} | Quantity: {quantity}"
+        )
+        
         return str(quantity)
         
     def manage_positions(self, signals: Dict[str, Optional[str]], all_data: Dict[str, Optional[Dict]]) -> None:
