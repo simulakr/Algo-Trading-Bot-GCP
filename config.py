@@ -54,11 +54,11 @@ DEFAULT_LEVERAGE = 25
 
 SYMBOL_SETTINGS = {
     'BTCUSDT': {'risk': 60.0, 'leverage': 25},
-    'ETHUSDT': {'risk': 125.0, 'leverage': 25},
-    'SOLUSDT': {'risk': 100.0, 'leverage': 25},
-    'XRPUSDT': {'risk': 100.0, 'leverage': 25},
-    'DOGEUSDT': {'risk': 90.0, 'leverage': 25},
-    '1000PEPEUSDT': {'risk': 75.0, 'leverage': 25}
+    'ETHUSDT': {'risk': 40.0, 'leverage': 25},
+    'SOLUSDT': {'risk': 32.0, 'leverage': 25},
+    'XRPUSDT': {'risk': 32.0, 'leverage': 25},
+    'DOGEUSDT': {'risk': 28.0, 'leverage': 25},
+    '1000PEPEUSDT': {'risk': 25.0, 'leverage': 25}
 }
 
 # Trading Ayarları
