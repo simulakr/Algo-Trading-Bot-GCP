@@ -3,6 +3,7 @@ from pybit.unified_trading import HTTP
 from exit_strategies import ExitStrategy
 import logging
 from config import LEVERAGE, RISK_PER_TRADE_USDT, ROUND_NUMBERS, DEFAULT_LEVERAGE, SYMBOL_SETTINGS
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,16 @@ class PositionManager:
                 raise Exception(f"Pozisyon açma hatası: {order['retMsg']}")
     
             logger.info(f"{symbol} {direction} pozisyon açıldı | Miktar: {quantity} | Entry: {entry_price}")
-    
+
+            # ⭐ POZİSYON DOĞRULAMA ⭐
+            # ============================================
+            time.sleep(1)  # ← YENİ: 1 saniye bekle (Bybit'in execute etmesi için)
+            
+            if not self._verify_position_opened(symbol, direction, float(quantity)):
+                logger.warning(f"{symbol} pozisyon doğrulanamadı, TP/SL ayarlanamayacak")
+                return None
+            # ============================================
+            
             # TP/SL seviyelerini hesapla
             tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
             logger.info(f"{symbol} TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
@@ -180,6 +190,44 @@ class PositionManager:
             logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
             return False
 
+    def _verify_position_opened(self, symbol: str, direction: str, expected_qty: float) -> bool:
+        """
+        Pozisyonun gerçekten açıldığını doğrular (timing sorunu önleme)
+        Maksimum 5 saniye boyunca 0.5 saniye aralıklarla kontrol eder
+        """
+        try:
+            expected_side = 'Buy' if direction == 'LONG' else 'Sell'
+            
+            # Maksimum 10 deneme (10 x 0.5 saniye = 5 saniye)
+            for attempt in range(10):
+                positions = self.client.get_positions(
+                    category='linear',
+                    symbol=symbol
+                )
+                
+                if positions['retCode'] == 0:
+                    for pos in positions['result']['list']:
+                        pos_size = float(pos.get('size', 0))
+                        pos_side = pos.get('side', '')
+                        
+                        # Pozisyon var mı ve doğru yönde mi?
+                        if pos_size > 0 and pos_side == expected_side:
+                            # Miktar uyuşuyor mu? (%5 tolerans)
+                            if abs(pos_size - expected_qty) < expected_qty * 0.05:
+                                logger.info(f"{symbol} pozisyon doğrulandı (deneme {attempt + 1}/10)")
+                                return True
+                
+                # 0.5 saniye bekle ve tekrar dene
+                time.sleep(0.5)
+            
+            # 5 saniye sonunda hala bulunamadı
+            logger.error(f"{symbol} pozisyon 5 saniye içinde doğrulanamadı")
+            return False
+            
+        except Exception as e:
+            logger.error(f"{symbol} pozisyon doğrulama hatası: {e}")
+            return False
+            
     def _calculate_position_size(self, symbol: str, entry_price: float) -> str:
         """
         Sembol bazlı risk ve kaldıraç ayarlarına göre pozisyon büyüklüğü hesaplar
