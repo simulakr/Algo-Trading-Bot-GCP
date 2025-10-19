@@ -58,7 +58,7 @@ SYMBOL_SETTINGS = {
     'SOLUSDT': {'risk': 32.0, 'leverage': 25},
     'XRPUSDT': {'risk': 32.0, 'leverage': 25},
     'DOGEUSDT': {'risk': 28.0, 'leverage': 25},
-    '1000PEPEUSDT': {'risk': 25.0, 'leverage': 25}
+    '1000PEPEUSDT': {'risk': 30.0, 'leverage': 20}
 }
 
 # Trading Ayarları
