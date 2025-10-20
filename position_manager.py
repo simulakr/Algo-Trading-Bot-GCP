@@ -228,7 +228,7 @@ class PositionManager:
             logger.error(f"{symbol} pozisyon doğrulama hatası: {e}")
             return False
             
-    def _calculate_position_size(self, symbol: str, sl_multiplier=3, atr_value: float ,entry_price: float) -> str:
+    def _calculate_position_size(self, symbol: str, atr_value: float ,entry_price: float, sl_multiplier=3) -> str:
         """
         Sembol bazlı risk ve kaldıraç ayarlarına göre pozisyon büyüklüğü hesaplar
         """
