@@ -228,7 +228,7 @@ class PositionManager:
             logger.error(f"{symbol} pozisyon doğrulama hatası: {e}")
             return False
             
-    def _calculate_position_size(self, symbol: str, entry_price: float) -> str:
+    def _calculate_position_size(self, symbol: str, sl_multiplier=3, atr_value: float ,entry_price: float) -> str:
         """
         Sembol bazlı risk ve kaldıraç ayarlarına göre pozisyon büyüklüğü hesaplar
         """
@@ -238,8 +238,7 @@ class PositionManager:
         leverage = symbol_config.get('leverage', DEFAULT_LEVERAGE)
         
         # Pozisyon büyüklüğünü hesapla
-        # Formula: (Risk Amount * Leverage) / Entry Price
-        raw_quantity = (risk_amount * leverage) / entry_price
+        raw_quantity = risk_amount / (sl_multiplier * atr_value)
         
         # Sembole göre yuvarlama hassasiyeti
         quantity = round(raw_quantity, ROUND_NUMBERS[symbol])
