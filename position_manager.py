@@ -35,7 +35,7 @@ class PositionManager:
                     # Devam et ve yeni pozisyon aç
             
             # Pozisyon büyüklüğünü hesapla
-            quantity = self._calculate_position_size(symbol, entry_price)
+            quantity = self._calculate_position_size(symbol, atr_value, entry_price)
             logger.info(f"{symbol} {direction} pozisyon hesaplandı | Miktar: {quantity}")
             
             # Market emri ile pozisyon aç
