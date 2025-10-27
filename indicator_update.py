@@ -130,3 +130,10 @@ df['pivot_up_2x'] = False
 df['pivot_down_2x'] = False
 df.loc[(df['low_pivot_confirmed_2x']) & (df['trend_13_50']== 'uptrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_up_2x'] = True
 df.loc[(df['high_pivot_confirmed_2x']) & (df['trend_13_50']== 'downtrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_down_2x'] = True
+
+# For Entry 
+def check_long_entry(row: Dict[str, Any]) -> bool:
+    return row['atr_steps_3x']=='long'
+
+def check_short_entry(row: Dict[str, Any]) -> bool:
+    return row['atr_steps_3x']=='short'
