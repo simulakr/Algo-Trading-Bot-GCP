@@ -132,8 +132,22 @@ df.loc[(df['low_pivot_confirmed_2x']) & (df['trend_13_50']== 'uptrend') & (atr_r
 df.loc[(df['high_pivot_confirmed_2x']) & (df['trend_13_50']== 'downtrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_down_2x'] = True
 
 # For Entry 
-def check_long_entry(row: Dict[str, Any]) -> bool:
-    return row['atr_steps_3x']=='long'
+# Dosyanın başına ekle
+MAJOR_PAIRS_3X = ['BTCUSDT', 'ETHUSDT', 'XRPUSDT', 'DOGEUSDT', '1000PEPEUSDT', 'SOLUSDT']
 
-def check_short_entry(row: Dict[str, Any]) -> bool:
-    return row['atr_steps_3x']=='short'
+def check_long_entry(row: Dict[str, Any], symbol: str) -> bool:
+    atr_steps_col = 'atr_steps_3x' if symbol in MAJOR_PAIRS_3X else 'atr_steps_2x'
+    return row[atr_steps_col] == 'long'
+
+def check_short_entry(row: Dict[str, Any], symbol: str) -> bool:
+    atr_steps_col = 'atr_steps_3x' if symbol in MAJOR_PAIRS_3X else 'atr_steps_2x'
+    return row[atr_steps_col] == 'short'
+
+def check_long_entry(row: Dict[str, Any], symbol: str) -> bool:
+    # Sadece major pariteler long alabilir (3x ATR ile)
+    if symbol in MAJOR_PAIRS_3X:
+        return row['atr_steps_3x'] == 'long'
+    else:
+        return False  
+
+
