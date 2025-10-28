@@ -352,8 +352,8 @@ def calculate_indicators(df, symbol):
     df.loc[df['pivot_down'], 'entry_atr_steps_s'] = ((df.loc[df['pivot_down'], 'high_pivot_filled'] - df.loc[df['pivot_down'], 'close']) / df.loc[df['pivot_down'], 'atr'])
 
     
-    df.loc[(df['pivot_up']) & (df['entry_atr_steps_l'] < 3.75), 'atr_steps'] = 'long'
-    df.loc[(df['pivot_down']) & (df['entry_atr_steps_s'] < 3.75), 'atr_steps'] = 'short' 
+    df.loc[(df['pivot_up']) & (df['dc_position_ratio_50'] > 60) & (df['nw_position'] != 'above_upper'), 'atr_steps'] = 'long'
+    df.loc[(df['pivot_down']) & (df['dc_position_ratio_50'] < 40) & (df['nw_position'] != 'below_lower'), 'atr_steps'] = 'short' 
 
     # DC 50 breakout
     long_dc50, short_dc50 = dc_breakout_signal(df, 'dc_upper_50', 'dc_lower_50', trend_filter=True)
