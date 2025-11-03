@@ -44,6 +44,11 @@ def calculate_donchian_channel(price_data, window=20):
     middle_band = (upper_band + lower_band) / 2
     return pd.DataFrame({'dc_upper': upper_band, 'dc_lower': lower_band, 'dc_middle': middle_band})
 
+# --- SMA ---
+def calculate_sma(price_data, window=50, price_col='close'):    
+    sma = price_data[price_col].rolling(window=window).mean()
+    return sma
+
 # --- SMA Trend ---
 def determine_sma_trend(price_data, short_window=50, long_window=200, price_col='close'):
     short_sma = price_data[price_col].rolling(window=short_window).mean()
@@ -323,7 +328,12 @@ def calculate_indicators(df, symbol):
         df[f'dc_position_ratio_{w}'] = (df['close'] - df[f'dc_lower_{w}']) / (df[f'dc_upper_{w}'] - df[f'dc_lower_{w}']) * 100
         df[f'dc_breakout_{w}'] = df['high'] > df[f'dc_upper_{w}']
         df[f'dc_breakdown_{w}'] = df['low'] < df[f'dc_lower_{w}']
-
+    
+    df['sma_20'] = calculate_sma(df,window=20)
+    df['sma_50'] = calculate_sma(df,window=50)
+    df['sma_200'] = calculate_sma(df,window=200)
+    df['sma_800'] = calculate_sma(df,window=799)
+    
     df['trend_50_200'] = determine_sma_trend(df, short_window=50, long_window=200)
     df['trend_13_50'] = determine_sma_trend(df, short_window=13, long_window=50)
 
@@ -339,6 +349,8 @@ def calculate_indicators(df, symbol):
     df['pct_atr'] = df['atr'] / df['close'] * 100
 
     df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3)
+    df.loc[(df['low_pivot_confirmed']) & (df['close'] > df['sma_20']) & (df['close'] > df['sma_50']) & (df['close'] > df['sma_200']) & (df['close'] > df['sma_800']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_up_up'] = True
+    df.loc[(df['high_pivot_confirmed']) & (df['close'] < df['sma_20']) & (df['close'] < df['sma_50']) & (df['close'] < df['sma_200']) & (df['close'] < df['sma_800']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_down_down'] = True
     
     df['pivot_up'] = False
     df['pivot_down'] = False
