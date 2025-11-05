@@ -25,7 +25,7 @@ class BybitFuturesAPI:  # Sınıf adı değişti
         self,
         symbol: str = 'SOLUSDT',
         interval: str = '15',  # Bybit formatı (15m için '15')
-        limit: int = 500,  # Bybit max limit 300
+        limit: int = 800,  # Bybit max limit 300
         convert_to_float: bool = True
     ) -> Optional[pd.DataFrame]:
         """
