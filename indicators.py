@@ -183,10 +183,7 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1, suf
 def calculate_indicators(df, symbol):
     df['rsi'] = calculate_rsi(df)
     df['atr'] = calculate_atr(df)
-
-    bb = calculate_bollinger_bands(df)
-    df[['bb_middle', 'bb_upper', 'bb_lower']] = bb
-
+    
     for w in [20, 50]:
         dc = calculate_donchian_channel(df, window=w)
         df[f'dc_upper_{w}'] = dc['dc_upper']
@@ -196,13 +193,10 @@ def calculate_indicators(df, symbol):
         df[f'dc_breakout_{w}'] = df['high'] > df[f'dc_upper_{w}']
         df[f'dc_breakdown_{w}'] = df['low'] < df[f'dc_lower_{w}']
     
-    df['sma_20'] = calculate_sma(df,window=20)
     df['sma_50'] = calculate_sma(df,window=50)
     df['sma_200'] = calculate_sma(df,window=200)
-    df['sma_800'] = calculate_sma(df,window=799)
     
     df['trend_50_200'] = determine_sma_trend(df, short_window=50, long_window=200)
-    df['trend_13_50'] = determine_sma_trend(df, short_window=13, long_window=50)
 
     nw = calculate_nadaraya_watson_envelope_optimized(df)
     df[['nw', 'nw_upper', 'nw_lower']] = nw
