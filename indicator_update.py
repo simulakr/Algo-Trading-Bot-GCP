@@ -1,4 +1,15 @@
-    # OLD STRATEGIES
+    # OLD INDICATORS & STRATEGIES
+
+    # --- Bollinger Bands ---
+    def calculate_bollinger_bands(price_data, window=20, std_multiplier=2, price_col='close'):
+        price = price_data[price_col]
+        sma = price.rolling(window=window).mean()
+        std = price.rolling(window=window).std()
+        upper_band = sma + std_multiplier * std
+        lower_band = sma - std_multiplier * std
+        return pd.DataFrame({'bb_middle': sma, 'bb_upper': upper_band, 'bb_lower': lower_band})
+        
+    # Pivot Up-Down
     df['pivot_up'] = False
     df['pivot_down'] = False
     df.loc[(df['low_pivot_confirmed']) & (df['trend_13_50']== 'uptrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_up'] = True
