@@ -126,6 +126,9 @@
                     
         return cleaned
     
+    bb = calculate_bollinger_bands(df)
+    df[['bb_middle', 'bb_upper', 'bb_lower']] = bb
+
     # Pivot Up-Down
     df['pivot_up'] = False
     df['pivot_down'] = False
