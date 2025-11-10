@@ -8,16 +8,15 @@ BYBIT_API_KEY = os.getenv("BYBIT_API_KEY")
 BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET")
 
 # Sembol ve Zaman Aralığı Ayarları
-SYMBOLS = ['BTCUSDT', 'ETHUSDT','XRPUSDT','DOGEUSDT',  "1000PEPEUSDT", "SOLUSDT"]  # ByBit'te mevcut çiftler "SUIUSDT"
+SYMBOLS = ['BTCUSDT', 'ETHUSDT', "SOLUSDT",'XRPUSDT','DOGEUSDT']  # ByBit'te mevcut çiftler "SUIUSDT"
 INTERVAL = "15"  # ByBit formatında (15m için '15', 1h için '60')
 
 # Sembol bazlı ATR aralıkları
 atr_ranges = {'SOLUSDT':  (0.38, 1.05),
-              '1000PEPEUSDT':  (0.64, 1.53),
               'BTCUSDT': (0.15, 0.57),
                'ETHUSDT':  (0.285, 0.88),
               'DOGEUSDT':  (0.41, 1.18),
-              'XRPUSDT':  (0.32, 1.27), #'SUIUSDT': (0.61, 1.13)
+              'XRPUSDT':  (0.32, 1.27), #'SUIUSDT': (0.61, 1.13),'1000PEPEUSDT':  (0.64, 1.53)
               }
 
 # Quantity Hesabı İçin Ondalık Sayıları
@@ -57,8 +56,7 @@ SYMBOL_SETTINGS = {
     'ETHUSDT': {'risk': 40.0, 'leverage': 25},
     'SOLUSDT': {'risk': 40.0, 'leverage': 25},
     'XRPUSDT': {'risk': 40.0, 'leverage': 25},
-    'DOGEUSDT': {'risk': 40.0, 'leverage': 25},
-    '1000PEPEUSDT': {'risk': 40.0, 'leverage': 20}
+    'DOGEUSDT': {'risk': 40.0, 'leverage': 25}, # '1000PEPEUSDT': {'risk': 40.0, 'leverage': 20}
 }
 
 # Trading Ayarları
