@@ -358,30 +358,30 @@ def calculate_indicators(df, symbol):
     df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=2, suffix='_2x')
     df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3, suffix='_3x')
 
-    dff.loc[dff['high_pivot_filled_2x'] < dff['high_pivot_filled_2x'].shift(1), 'high_structure_2x'] = 'LH'
-    dff.loc[dff['high_pivot_filled_2x'] > dff['high_pivot_filled_2x'].shift(1), 'high_structure_2x'] = 'HH'
-    dff.loc[dff['low_pivot_filled_2x'] < dff['low_pivot_filled_2x'].shift(1), 'low_structure_2x'] = 'LL'
-    dff.loc[dff['low_pivot_filled_2x'] > dff['low_pivot_filled_2x'].shift(1), 'low_structure_2x'] = 'HL'
+    df.loc[df['high_pivot_filled_2x'] < df['high_pivot_filled_2x'].shift(1), 'high_structure_2x'] = 'LH'
+    df.loc[df['high_pivot_filled_2x'] > df['high_pivot_filled_2x'].shift(1), 'high_structure_2x'] = 'HH'
+    df.loc[df['low_pivot_filled_2x'] < df['low_pivot_filled_2x'].shift(1), 'low_structure_2x'] = 'LL'
+    df.loc[df['low_pivot_filled_2x'] > df['low_pivot_filled_2x'].shift(1), 'low_structure_2x'] = 'HL'
     
-    dff['high_structure_2x'] = dff['high_structure_2x'].ffill().fillna('HH')
-    dff['low_structure_2x'] = dff['low_structure_2x'].ffill().fillna('LL')
+    df['high_structure_2x'] = df['high_structure_2x'].ffill().fillna('HH')
+    df['low_structure_2x'] = df['low_structure_2x'].ffill().fillna('LL')
     
-    dff.loc[dff['high_pivot_filled_3x'] < dff['high_pivot_filled_3x'].shift(1), 'high_structure_3x'] = 'LH'
-    dff.loc[dff['high_pivot_filled_3x'] > dff['high_pivot_filled_3x'].shift(1), 'high_structure_3x'] = 'HH'
-    dff.loc[dff['low_pivot_filled_3x'] < dff['low_pivot_filled_3x'].shift(1), 'low_structure_3x'] = 'LL'
-    dff.loc[dff['low_pivot_filled_3x'] > dff['low_pivot_filled_3x'].shift(1), 'low_structure_3x'] = 'HL'
+    df.loc[df['high_pivot_filled_3x'] < df['high_pivot_filled_3x'].shift(1), 'high_structure_3x'] = 'LH'
+    df.loc[df['high_pivot_filled_3x'] > df['high_pivot_filled_3x'].shift(1), 'high_structure_3x'] = 'HH'
+    df.loc[df['low_pivot_filled_3x'] < df['low_pivot_filled_3x'].shift(1), 'low_structure_3x'] = 'LL'
+    df.loc[df['low_pivot_filled_3x'] > df['low_pivot_filled_3x'].shift(1), 'low_structure_3x'] = 'HL'
     
-    dff['high_structure_3x'] = dff['high_structure_3x'].ffill().fillna('HH')
-    dff['low_structure_3x'] = dff['low_structure_3x'].ffill().fillna('LL')
+    df['high_structure_3x'] = df['high_structure_3x'].ffill().fillna('HH')
+    df['low_structure_3x'] = df['low_structure_3x'].ffill().fillna('LL')
     
     df['pivot_go_up_2x'] = False
     df['pivot_go_down_2x'] = False
-    df.loc[(df['low_pivot_confirmed_2x']) & (dff['low_structure_2x']=='HL') & (dff['high_structure_2x']=='HH') & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_2x'] = True
-    df.loc[(df['high_pivot_confirmed_2x']) & (dff['high_structure_2x']=='LH') & (dff['low_structure_2x']=='LL') & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_2x'] = True
+    df.loc[(df['low_pivot_confirmed_2x']) & (df['low_structure_2x']=='HL') & (df['high_structure_2x']=='HH') & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_2x'] = True
+    df.loc[(df['high_pivot_confirmed_2x']) & (df['high_structure_2x']=='LH') & (df['low_structure_2x']=='LL') & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_2x'] = True
     
     df['pivot_go_up_3x'] = False
     df['pivot_go_down_3x'] = False
-    df.loc[(df['low_pivot_confirmed_3x']) & (dff['low_structure_3x']=='HL') & (dff['high_structure_3x']=='HH') & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_3x'] = True
-    df.loc[(df['high_pivot_confirmed_3x']) & (dff['high_structure_3x']=='LH') & (dff['low_structure_3x']=='LL') & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_3x'] = True
+    df.loc[(df['low_pivot_confirmed_3x']) & (df['low_structure_3x']=='HL') & (df['high_structure_3x']=='HH') & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_3x'] = True
+    df.loc[(df['high_pivot_confirmed_3x']) & (df['high_structure_3x']=='LH') & (df['low_structure_3x']=='LL') & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_3x'] = True
                  
     return df
