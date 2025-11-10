@@ -67,6 +67,64 @@
                 return 'medium_bearish'
             else:
                 return 'weak_bearish'
+    def bb_touch_signal(df, touch_count=1, trend_filter=False, trend_col='trend_50_200', trend_direction='uptrend'):
+        """
+        Bollinger Band üst/alt temasına göre sinyal üretir.
+    
+        Returns:
+            signal_long, signal_short: pd.Series
+        """
+        df['bb_touch_upper'] = df['high'] >= df['bb_upper']
+        df['bb_touch_lower'] = df['low'] <= df['bb_lower']
+    
+        touch_upper = sum([df['bb_touch_upper'].shift(i + 1) for i in range(touch_count)])
+        touch_lower = sum([df['bb_touch_lower'].shift(i + 1) for i in range(touch_count)])
+    
+        signal_long = touch_upper >= touch_count
+        signal_short = touch_lower >= touch_count
+    
+        if trend_filter:
+            signal_long &= df[trend_col] == trend_direction
+            signal_short &= df[trend_col] != trend_direction
+    
+        return pd.Series(signal_long, index=df.index), pd.Series(signal_short, index=df.index)
+    
+    
+    def dc_breakout_signal(df, dc_upper='dc_upper_50', dc_lower='dc_lower_50',
+                           trend_filter=False, trend_col='trend_50_200', trend_direction='uptrend'):
+        """
+        Donchian Channel breakout sinyali.
+    
+        Returns:
+            signal_long, signal_short: pd.Series
+        """
+        breakout_upper = df['high'] > df[dc_upper].shift(1)
+        breakout_lower = df['low'] < df[dc_lower].shift(1)
+    
+        signal_long = breakout_upper
+        signal_short = breakout_lower
+    
+        if trend_filter:
+            signal_long &= df[trend_col] == trend_direction
+            signal_short &= df[trend_col] != trend_direction
+    
+        return pd.Series(signal_long, index=df.index), pd.Series(signal_short, index=df.index)
+    
+    
+    def clean_signals(signal_series, window=10):
+        """
+        Son window bar içinde sinyal varsa, yeni sinyali engeller
+        """
+        cleaned = signal_series.copy()
+        
+        for i in range(len(signal_series)):
+            if signal_series.iloc[i]:  # Eğer sinyal varsa
+                # Önceki window barda sinyal var mı kontrol et
+                start_idx = max(0, i - window)
+                if signal_series.iloc[start_idx:i].any():
+                    cleaned.iloc[i] = False  # Sinyali temizle
+                    
+        return cleaned
     
     # Pivot Up-Down
     df['pivot_up'] = False
