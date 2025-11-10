@@ -201,28 +201,7 @@ def calculate_indicators(df, symbol):
     nw = calculate_nadaraya_watson_envelope_optimized(df)
     df[['nw', 'nw_upper', 'nw_lower']] = nw
 
-    df['candle'] = df.apply(candle, axis=1)
-    df['candle_body'] = abs(df['close'] - df['open'])
-    df['candle_strength'] = df['candle_body'] / df['atr']
-    df['candle_class'] = df.apply(classify_strength, axis=1)
-
-    df = add_adx(df)
     df['pct_atr'] = df['atr'] / df['close'] * 100
-
-       
-    # DC 50 breakout
-    long_dc50, short_dc50 = dc_breakout_signal(df, 'dc_upper_50', 'dc_lower_50', trend_filter=True)
-    df['dc_breakout_50'] = long_dc50
-    df['dc_breakdown_50'] = short_dc50
-    df['dc_breakout_clean_50'] = clean_signals(long_dc50)
-    df['dc_breakdown_clean_50'] = clean_signals(short_dc50)
-
-    # BB3 touch
-    long3, short3 = bb_touch_signal(df, touch_count=3, trend_filter=True)
-    df['bb_3_touch_long'] = long3
-    df['bb_3_touch_short'] = short3
-    df['bb_3_touch_long_clean'] = clean_signals(long3)
-    df['bb_3_touch_short_clean'] = clean_signals(short3)
     
     df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=2, suffix='_2x')
     df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3, suffix='_3x')
