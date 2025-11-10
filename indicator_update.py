@@ -8,7 +8,66 @@
         upper_band = sma + std_multiplier * std
         lower_band = sma - std_multiplier * std
         return pd.DataFrame({'bb_middle': sma, 'bb_upper': upper_band, 'bb_lower': lower_band})
-        
+
+    # --- ADX ---
+    def add_adx(df, period=14):
+        def _calculate_ema(series, p):
+            ema_values = [np.nan] * len(series)
+            if len(series) < p:
+                return pd.Series(ema_values, index=series.index)
+            ema_values[p - 1] = series.iloc[:p].mean()
+            alpha = 2 / (p + 1)
+            for i in range(p, len(series)):
+                ema_values[i] = (series.iloc[i] * alpha) + (ema_values[i-1] * (1 - alpha))
+            return pd.Series(ema_values, index=series.index)
+    
+        df = df.copy()
+        df['prev_close'] = df['close'].shift(1)
+        df['high_low'] = df['high'] - df['low']
+        df['high_prev_close'] = abs(df['high'] - df['prev_close'])
+        df['low_prev_close'] = abs(df['low'] - df['prev_close'])
+        df['tr'] = df[['high_low', 'high_prev_close', 'low_prev_close']].max(axis=1)
+    
+        df['prev_high'] = df['high'].shift(1)
+        df['prev_low'] = df['low'].shift(1)
+        df['up_move'] = df['high'] - df['prev_high']
+        df['down_move'] = df['prev_low'] - df['low']
+    
+        df['+dm'] = np.where((df['up_move'] > df['down_move']) & (df['up_move'] > 0), df['up_move'], 0)
+        df['-dm'] = np.where((df['down_move'] > df['up_move']) & (df['down_move'] > 0), df['down_move'], 0)
+    
+        df['tr_ema'] = _calculate_ema(df['tr'], period)
+        df['+dm_ema'] = _calculate_ema(df['+dm'], period)
+        df['-dm_ema'] = _calculate_ema(df['-dm'], period)
+    
+        df['+di'] = (df['+dm_ema'] / df['tr_ema']) * 100
+        df['-di'] = (df['-dm_ema'] / df['tr_ema']) * 100
+    
+        df['dx'] = (abs(df['+di'] - df['-di']) / (df['+di'] + df['-di'])) * 100
+        df['adx'] = _calculate_ema(df['dx'], period)
+    
+        return df
+    
+    # --- Candle Analysis ---
+    def candle(df):
+        return 'green' if df['close'] > df['open'] else 'red'
+    
+    def classify_strength(row):
+        if row['close'] > row['open']:
+            if row['candle_strength'] > 1.1:
+                return 'strong_bullish'
+            elif row['candle_strength'] > 0.7:
+                return 'medium_bullish'
+            else:
+                return 'weak_bullish'
+        else:
+            if row['candle_strength'] > 1.1:
+                return 'strong_bearish'
+            elif row['candle_strength'] > 0.7:
+                return 'medium_bearish'
+            else:
+                return 'weak_bearish'
+    
     # Pivot Up-Down
     df['pivot_up'] = False
     df['pivot_down'] = False
