@@ -266,9 +266,9 @@ class TradingBot:
                 signals[symbol] = None
                 continue
 
-            if check_long_entry(data):
+            if check_long_entry(data, symbol):
                 signals[symbol] = 'LONG'
-            elif check_short_entry(data):
+            elif check_short_entry(data, symbol):
                 signals[symbol] = 'SHORT'
             else:
                 signals[symbol] = None
