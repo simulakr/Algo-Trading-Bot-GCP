@@ -340,20 +340,7 @@ def calculate_indicators(df, symbol):
     df = add_adx(df)
     df['pct_atr'] = df['atr'] / df['close'] * 100
 
-    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=2, suffix='_2x')
-    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3, suffix='_3x')
-    
-    df['pivot_go_up_2x'] = False
-    df['pivot_go_down_2x'] = False
-    df.loc[(df['low_pivot_confirmed']) & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_2x'] = True
-    df.loc[(df['high_pivot_confirmed']) & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_2x'] = True
-    
-    df['pivot_go_up_3x'] = False
-    df['pivot_go_down_3x'] = False
-    df.loc[(df['low_pivot_confirmed']) & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_3x'] = True
-    df.loc[(df['high_pivot_confirmed']) & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_3x'] = True
-    
-    
+       
     # DC 50 breakout
     long_dc50, short_dc50 = dc_breakout_signal(df, 'dc_upper_50', 'dc_lower_50', trend_filter=True)
     df['dc_breakout_50'] = long_dc50
@@ -368,6 +355,17 @@ def calculate_indicators(df, symbol):
     df['bb_3_touch_long_clean'] = clean_signals(long3)
     df['bb_3_touch_short_clean'] = clean_signals(short3)
     
-       
-             
+    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=2, suffix='_2x')
+    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3, suffix='_3x')
+    
+    df['pivot_go_up_2x'] = False
+    df['pivot_go_down_2x'] = False
+    df.loc[(df['low_pivot_confirmed_2x']) & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_2x'] = True
+    df.loc[(df['high_pivot_confirmed_2x']) & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_2x'] = True
+    
+    df['pivot_go_up_3x'] = False
+    df['pivot_go_down_3x'] = False
+    df.loc[(df['low_pivot_confirmed_3x']) & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_3x'] = True
+    df.loc[(df['high_pivot_confirmed_3x']) & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_3x'] = True
+                 
     return df
