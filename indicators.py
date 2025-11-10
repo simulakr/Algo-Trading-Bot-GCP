@@ -139,14 +139,14 @@ def classify_strength(row):
         else:
             return 'weak_bearish'
 
-def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1): 
+def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1, suffix=""): 
     closes = df[close_col].values
     atrs = df[atr_col].values
 
     high_pivot = [None] * len(df)
     low_pivot = [None] * len(df)
-    high_pivot_atr = [None] * len(df)  # ATR değerini sakla
-    low_pivot_atr = [None] * len(df)   # ATR değerini sakla
+    high_pivot_atr = [None] * len(df)
+    low_pivot_atr = [None] * len(df)
     high_pivot_confirmed = [0] * len(df)
     low_pivot_confirmed = [0] * len(df)
     pivot_bars_ago = [None] * len(df)
@@ -154,29 +154,28 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1):
     last_pivot = closes[0]
     last_atr = atrs[0]
     last_pivot_idx = 0
-    direction = None  # "up" veya "down"
+    direction = None
 
     for i in range(1, len(df)):
         price = closes[i]
-        atr = atrs[i] * atr_mult  # ATR çarpanı uygulanıyor
+        atr = atrs[i] * atr_mult
 
         if direction is None:
             if price >= last_pivot + atr:
                 direction = "up"
                 last_pivot = closes[last_pivot_idx]
                 high_pivot[last_pivot_idx] = last_pivot
-                high_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]  # ATR değerini kaydet
+                high_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]
             elif price <= last_pivot - atr:
                 direction = "down"
                 last_pivot = closes[last_pivot_idx]
                 low_pivot[last_pivot_idx] = last_pivot
-                low_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]   # ATR değerini kaydet
+                low_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]
 
         elif direction == "up":
             if price <= (last_pivot - atr):
-                # ✅ Tepe teyit edildi
                 high_pivot[last_pivot_idx] = last_pivot
-                high_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]  # ATR değerini kaydet
+                high_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]
                 high_pivot_confirmed[i] = 1
                 pivot_bars_ago[i] = i - last_pivot_idx
 
@@ -184,15 +183,13 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1):
                 last_pivot = price
                 last_pivot_idx = i
             elif price > last_pivot:
-                # Tepe güncelle, teyit etme
                 last_pivot = price
                 last_pivot_idx = i
 
         elif direction == "down":
             if price >= (last_pivot + atr):
-                # ✅ Dip teyit edildi
                 low_pivot[last_pivot_idx] = last_pivot
-                low_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]   # ATR değerini kaydet
+                low_pivot_atr[last_pivot_idx] = atrs[last_pivot_idx]
                 low_pivot_confirmed[i] = 1
                 pivot_bars_ago[i] = i - last_pivot_idx
 
@@ -200,38 +197,35 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1):
                 last_pivot = price
                 last_pivot_idx = i
             elif price < last_pivot:
-                # Dip güncelle, teyit etme
                 last_pivot = price
                 last_pivot_idx = i
 
-    # Önce orijinal sütunları oluştur
-    df["high_pivot"] = high_pivot
-    df["low_pivot"] = low_pivot
-    df["high_pivot_atr"] = high_pivot_atr
-    df["low_pivot_atr"] = low_pivot_atr
-    df["high_pivot_confirmed"] = high_pivot_confirmed
-    df["low_pivot_confirmed"] = low_pivot_confirmed
-    df["pivot_bars_ago"] = pivot_bars_ago
+    # Sütun isimlerine suffix ekle
+    df[f"high_pivot{suffix}"] = high_pivot
+    df[f"low_pivot{suffix}"] = low_pivot
+    df[f"high_pivot_atr{suffix}"] = high_pivot_atr
+    df[f"low_pivot_atr{suffix}"] = low_pivot_atr
+    df[f"high_pivot_confirmed{suffix}"] = high_pivot_confirmed
+    df[f"low_pivot_confirmed{suffix}"] = low_pivot_confirmed
+    df[f"pivot_bars_ago{suffix}"] = pivot_bars_ago
 
-    # NaN değerleri doldurma işlemleri
-    # high_pivot ve low_pivot için forward fill
-    df["high_pivot_filled"] = df["high_pivot"].ffill()
-    df["low_pivot_filled"] = df["low_pivot"].ffill()
+    # Forward fill işlemleri - suffix eklenmiş isimlerle
+    df[f"high_pivot_filled{suffix}"] = df[f"high_pivot{suffix}"].ffill()
+    df[f"low_pivot_filled{suffix}"] = df[f"low_pivot{suffix}"].ffill()
+    df[f"high_pivot_atr_filled{suffix}"] = df[f"high_pivot_atr{suffix}"].ffill()
+    df[f"low_pivot_atr_filled{suffix}"] = df[f"low_pivot_atr{suffix}"].ffill()
 
-    # ATR değerleri için de forward fill
-    df["high_pivot_atr_filled"] = df["high_pivot_atr"].ffill()
-    df["low_pivot_atr_filled"] = df["low_pivot_atr"].ffill()
-
-    # High pivot - GÜVENLİ VERSİYON
-    high_temp = df["high_pivot_confirmed"].replace(0, np.nan)  # pd.NA yerine np.nan kullan
+    # High pivot confirmed - suffix ile
+    high_temp = df[f"high_pivot_confirmed{suffix}"].replace(0, np.nan)
     high_temp = high_temp.ffill()
-    df["high_pivot_confirmed_filled"] = high_temp.fillna(0).astype(int)
+    df[f"high_pivot_confirmed_filled{suffix}"] = high_temp.fillna(0).astype(int)
     
-    # Low pivot - GÜVENLİ VERSİYON  
-    low_temp = df["low_pivot_confirmed"].replace(0, np.nan)  # pd.NA yerine np.nan kullan
+    # Low pivot confirmed - suffix ile
+    low_temp = df[f"low_pivot_confirmed{suffix}"].replace(0, np.nan)
     low_temp = low_temp.ffill()
-    df["low_pivot_confirmed_filled"] = low_temp.fillna(0).astype(int)
+    df[f"low_pivot_confirmed_filled{suffix}"] = low_temp.fillna(0).astype(int)
 
+    # Pivot bars ago filled
     pivot_bars_filled = []
     last_valid_value = None
     last_valid_index = None
@@ -242,14 +236,12 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1):
             last_valid_index = i
             pivot_bars_filled.append(value)
         elif last_valid_value is not None:
-            # NaN değeri, son geçerli değer + (mevcut index - son geçerli index)
             new_value = last_valid_value + (i - last_valid_index)
             pivot_bars_filled.append(new_value)
         else:
-            # İlk değerler için
             pivot_bars_filled.append(None)
 
-    df["pivot_bars_ago_filled"] = pivot_bars_filled
+    df[f"pivot_bars_ago_filled{suffix}"] = pivot_bars_filled
 
     return df
 
@@ -348,25 +340,20 @@ def calculate_indicators(df, symbol):
     df = add_adx(df)
     df['pct_atr'] = df['atr'] / df['close'] * 100
 
-    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3)
-    df.loc[(df['low_pivot_confirmed']) & (df['close'] > df['sma_20']) & (df['close'] > df['sma_50']) & (df['close'] > df['sma_200']) & (df['close'] > df['sma_800']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_up_up'] = True
-    df.loc[(df['high_pivot_confirmed']) & (df['close'] < df['sma_20']) & (df['close'] < df['sma_50']) & (df['close'] < df['sma_200']) & (df['close'] < df['sma_800']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_down_down'] = True
+    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=2, suffix='_2x')
+    df = atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=3, suffix='_3x')
     
-    df['pivot_up'] = False
-    df['pivot_down'] = False
-    df.loc[(df['low_pivot_confirmed']) & (df['trend_13_50']== 'uptrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_up'] = True
-    df.loc[(df['high_pivot_confirmed']) & (df['trend_13_50']== 'downtrend') & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_down'] = True
-
-    df['entry_atr_steps_l'] = np.nan
-    df.loc[df['pivot_up'], 'entry_atr_steps_l'] = ((df.loc[df['pivot_up'], 'close'] - df.loc[df['pivot_up'], 'low_pivot_filled'] ) / df.loc[df['pivot_up'], 'atr'])
+    df['pivot_go_up_2x'] = False
+    df['pivot_go_down_2x'] = False
+    df.loc[(df['low_pivot_confirmed']) & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_2x'] = True
+    df.loc[(df['high_pivot_confirmed']) & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_2x'] = True
     
-    df['entry_atr_steps_s'] = np.nan
-    df.loc[df['pivot_down'], 'entry_atr_steps_s'] = ((df.loc[df['pivot_down'], 'high_pivot_filled'] - df.loc[df['pivot_down'], 'close']) / df.loc[df['pivot_down'], 'atr'])
-
+    df['pivot_go_up_3x'] = False
+    df['pivot_go_down_3x'] = False
+    df.loc[(df['low_pivot_confirmed']) & (df['trend_50_200']== 'uptrend') & (df['close'] < df['nw_upper']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_up_3x'] = True
+    df.loc[(df['high_pivot_confirmed']) & (df['trend_50_200']== 'downtrend') & (df['close'] > df['nw_lower']) & (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_down_3x'] = True
     
-    df.loc[(df['pivot_up']) & (df['dc_position_ratio_50'] > 60) & (df['close'] < df['nw_upper']), 'atr_steps'] = 'long'
-    df.loc[(df['pivot_down']) & (df['dc_position_ratio_50'] < 40) & (df['close'] > df['nw_lower']), 'atr_steps'] = 'short' 
-
+    
     # DC 50 breakout
     long_dc50, short_dc50 = dc_breakout_signal(df, 'dc_upper_50', 'dc_lower_50', trend_filter=True)
     df['dc_breakout_50'] = long_dc50
@@ -380,17 +367,7 @@ def calculate_indicators(df, symbol):
     df['bb_3_touch_short'] = short3
     df['bb_3_touch_long_clean'] = clean_signals(long3)
     df['bb_3_touch_short_clean'] = clean_signals(short3)
-
-    df['dc_order'] = None
-
-    df.loc[(df['dc_breakout_clean_50']) & (df['dc_position_ratio_20'] > 60) & (df['rsi'] > 50) & (df['close'] > df['nw']) &
-           (df['close'] < df['nw_upper']) & (df['close'] > df['bb_middle']) & (df['adx'] > 25) & (df['adx'] < 60) & 
-            (df['candle_class'].isin(['weak_bearish', 'weak_bullish', 'medium_bullish', 'strong_bullish'])) & 
-             (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'dc_order'] = 'long'
     
-    df.loc[(df['dc_breakdown_clean_50']) & (df['dc_position_ratio_20'] < 40) & (df['rsi'] < 50) & (df['close'] < df['nw']) &
-           (df['close'] > df['nw_lower']) & (df['close'] < df['bb_middle']) & (df['adx'] > 25) & (df['adx'] < 60) & 
-            (df['candle_class'].isin(['weak_bullish', 'weak_bearish', 'medium_bearish', 'strong_bearish'])) & 
-             (atr_ranges[symbol][0] < df['pct_atr']) & (df['pct_atr'] < atr_ranges[symbol][1]), 'dc_order'] = 'short'   
+       
              
     return df
