@@ -12,11 +12,11 @@ SYMBOLS = ['BTCUSDT', 'ETHUSDT', "SOLUSDT",'XRPUSDT','DOGEUSDT']  # ByBit'te mev
 INTERVAL = "15"  # ByBit formatında (15m için '15', 1h için '60')
 
 # Sembol bazlı ATR aralıkları
-atr_ranges = {'SOLUSDT':  (0.38, 1.05),
-              'BTCUSDT': (0.15, 0.57),
-               'ETHUSDT':  (0.285, 0.88),
-              'DOGEUSDT':  (0.41, 1.18),
-              'XRPUSDT':  (0.32, 1.27), #'SUIUSDT': (0.61, 1.13),'1000PEPEUSDT':  (0.64, 1.53)
+atr_ranges = {'SOLUSDT':  (0.36, 1.03),
+              'BTCUSDT': (0.14, 0.57),
+               'ETHUSDT':  (0.28, 0.87),
+              'DOGEUSDT':  (0.4, 1.17),
+              'XRPUSDT':  (0.3, 1.25), #'SUIUSDT': (0.61, 1.13),'1000PEPEUSDT':  (0.64, 1.53)
               }
 
 # Quantity Hesabı İçin Ondalık Sayıları
@@ -52,11 +52,11 @@ LEVERAGE = 25  # (ByBit'te max 25x genelde)
 DEFAULT_LEVERAGE = 25
 
 SYMBOL_SETTINGS = {
-    'BTCUSDT': {'risk': 40.0, 'leverage': 25},
-    'ETHUSDT': {'risk': 40.0, 'leverage': 25},
-    'SOLUSDT': {'risk': 40.0, 'leverage': 25},
-    'XRPUSDT': {'risk': 40.0, 'leverage': 25},
-    'DOGEUSDT': {'risk': 40.0, 'leverage': 25}, # '1000PEPEUSDT': {'risk': 40.0, 'leverage': 20}
+    'BTCUSDT': {'risk': 20.0, 'leverage': 25},
+    'ETHUSDT': {'risk': 20.0, 'leverage': 25},
+    'SOLUSDT': {'risk': 20.0, 'leverage': 25},
+    'XRPUSDT': {'risk': 20.0, 'leverage': 25},
+    'DOGEUSDT': {'risk': 20.0, 'leverage': 25}, # '1000PEPEUSDT': {'risk': 40.0, 'leverage': 20}
 }
 
 # Trading Ayarları
