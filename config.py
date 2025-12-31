@@ -20,13 +20,7 @@ atr_ranges = {'SOLUSDT':  (0.36, 1.03),
               }
 
 # Z: atr.quantile(0.25 - 0.75)
-Z_INDICATOR_PARAMS = {
-    'quantiles': (0.25, 0.75),  
-    'atr_period': 14,
-    'atr_multiplier': 1  
-}
-
-EXPECTED_Z_RANGES = {
+Z_RANGES = {
     'BTCUSDT': (0.188, 0.369),
     'ETHUSDT': (0.356, 0.620),
     'SOLUSDT': (0.446, 0.733),
