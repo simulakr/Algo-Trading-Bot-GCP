@@ -19,6 +19,14 @@ atr_ranges = {'SOLUSDT':  (0.36, 1.03),
               'XRPUSDT':  (0.3, 1.25), #'SUIUSDT': (0.61, 1.13),'1000PEPEUSDT':  (0.64, 1.53)
               }
 
+# Z: atr.quantile(0.25 - 0.75)
+z_ranges = {'BTCUSDT': (0.188, 0.369),
+               'ETHUSDT':  (0.356, 0.620),
+              'SOLUSDT':  (0.446, 0.733),
+              'DOGEUSDT':  (0.495, 0.833),
+              'XRPUSDT':  (0.391, 0.763), #'SUIUSDT': (0.61, 1.13),'1000PEPEUSDT':  (0.64, 1.53)
+              }
+
 # Quantity Hesabı İçin Ondalık Sayıları
 ROUND_NUMBERS = {
     'BTCUSDT': 3,
