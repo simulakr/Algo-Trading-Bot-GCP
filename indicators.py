@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from config import atr_ranges,Z_INDICATOR_PARAMS, EXPECTED_Z_RANGES
+from config import atr_ranges,Z_INDICATOR_PARAMS, Z_RANGES
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
 
@@ -177,20 +177,21 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1, suf
 
     return df
 
-def calculate_z(df, symbol=None):
-
-    q_low, q_high = Z_INDICATOR_PARAMS['quantiles']
-    pct_lower = df['pct_atr'].quantile(q_low)
-    pct_upper = df['pct_atr'].quantile(q_high)
+def calculate_z(df, symbol):
     
+    if symbol not in Z_RANGES:
+        raise ValueError(f"Z_RANGES'de {symbol} için değer tanımlanmamış!")
+  
+    pct_min, pct_max = Z_RANGES[symbol]  
     atr_mult = Z_INDICATOR_PARAMS['atr_multiplier']
-    
-    # Z hesaplama: close * pct_atr_quantile aralığında, minimum 1*ATR
+
     z = np.minimum(
         np.maximum(
-            df['close'] * pct_lower / 100,
-            atr_mult * df['atr']),
-        df['close'] * pct_upper / 100)
+            df['close'] * pct_min / 100,
+            atr_mult * df['atr']
+        ),
+        df['close'] * pct_max / 100
+    )
     
     return z
 
