@@ -28,6 +28,11 @@ Z_RANGES = {
     'XRPUSDT': (0.391, 0.763),
 }
 
+Z_INDICATOR_PARAMS = {
+    'atr_period': 14,
+    'atr_multiplier': 1  # minimum z hesabında kullanılan çarpan
+}
+
 # Quantity Hesabı İçin Ondalık Sayıları
 ROUND_NUMBERS = {
     'BTCUSDT': 3,
