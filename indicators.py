@@ -183,6 +183,7 @@ def atr_zigzag_two_columns(df, atr_col="atr", close_col="close", atr_mult=1, suf
 def calculate_indicators(df, symbol):
     df['rsi'] = calculate_rsi(df)
     df['atr'] = calculate_atr(df)
+    df['z'] = calculate_atr(df)
     
     for w in [20, 50]:
         dc = calculate_donchian_channel(df, window=w)
