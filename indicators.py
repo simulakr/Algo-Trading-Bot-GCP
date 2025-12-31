@@ -241,4 +241,27 @@ def calculate_indicators(df, symbol):
     df.loc[(df['low_pivot_confirmed_3x']) & (df['low_structure_3x']=='HL') & (df['high_structure_3x']!='HH') & (df['close'] > df['high_pivot_filled_3x'] ), 'pivot_go_breakout_3x'] = True
     df.loc[(df['high_pivot_confirmed_3x']) & (df['high_structure_3x']=='LH') & (df['low_structure_3x']!='LL') & (df['close'] < df['low_pivot_filled_3x']), 'pivot_go_breakdown_3x'] = True
 
+    long_shift_condition = True
+    for i in range(1, 11):
+        long_shift_condition &= (df['close'].shift(i) < df['high_pivot_filled_2x'])
+
+    second_long_condition = (df['low_structure_2x'] == 'HL') & \
+              long_shift_condition & \
+              (df['high_structure_2x'] != 'HH') & \
+              (df['close'] > df['high_pivot_filled_2x']) & \
+              (df['pct_atr'].between(low_atr, high_atr) & (df['pivot_go_breakout_2x']==False))
+
+    short_shift_condition = True
+    for i in range(1, 11):
+        short_shift_condition &= (df['close'].shift(i) > df['low_pivot_filled_2x'])
+
+    second_short_condition = (df['low_structure_2x'] != 'LL') & \
+              short_shift_condition & \
+              (df['high_structure_2x'] == 'LH') & \
+              (df['close'] < df['low_pivot_filled_2x']) & \
+              (df['pct_atr'].between(low_atr, high_atr) & (df['pivot_go_breakdown_2x']==False))
+
+
+    df.loc[second_long_condition,'pivot_go_breakout_2x'] = True
+    df.loc[second_short_condition,'pivot_go_breakdown_2x'] = True
     return df
