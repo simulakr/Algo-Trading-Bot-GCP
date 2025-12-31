@@ -192,20 +192,6 @@ def calculate_z(df, symbol=None):
             atr_mult * df['atr']),
         df['close'] * pct_upper / 100)
     
-    # Opsiyonel: Validasyon
-    if symbol and symbol in EXPECTED_Z_RANGES:
-        pct_z = (z / df['close']) * 100
-        actual_range = (pct_z.quantile(0.25), pct_z.quantile(0.75))
-        expected_range = EXPECTED_Z_RANGES[symbol]
-        
-        # %10'luk tolerans ile kontrol
-        if not (expected_range[0] * 0.9 <= actual_range[0] <= expected_range[0] * 1.1):
-            import warnings
-            warnings.warn(
-                f"{symbol}: pct_z Q25 {actual_range[0]:.3f} "
-                f"(expected ~{expected_range[0]:.3f})"
-            )
-    
     return z
 
 # --- Calculations ---
