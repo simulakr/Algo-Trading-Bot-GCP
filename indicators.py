@@ -287,12 +287,13 @@ def calculate_indicators(df, symbol):
            (atr_ranges[symbol][0] < df['pct_atr']) & 
            (df['pct_atr'] < atr_ranges[symbol][1]), 'pivot_go_breakdown_3x'] = True
     
-    # İkinci koşullar için de aynı şekilde
     low_atr = atr_ranges[symbol][0]
     high_atr = atr_ranges[symbol][1]
     
+    # NaN Control long conditions
     long_conditions = [
-        (df['close'].shift(i) < df['high_pivot_filled_2x']).fillna(False) 
+        ((df['high_pivot_filled_2x'].notna()) & 
+         (df['close'].shift(i) < df['high_pivot_filled_2x'])).fillna(False) 
         for i in range(1, 11)
     ]
     long_shift_condition = pd.concat(long_conditions, axis=1).all(axis=1)
@@ -301,15 +302,17 @@ def calculate_indicators(df, symbol):
         (df['low_structure_2x'] == 'HL') & 
         long_shift_condition & 
         (df['high_structure_2x'] != 'HH') & 
-        (df['high_pivot_filled_2x'].notna()) &  # 
+        (df['high_pivot_filled_2x'].notna()) & 
         (df['close'] > df['high_pivot_filled_2x']) & 
         (low_atr < df['pct_atr']) & 
         (df['pct_atr'] < high_atr) & 
         (df['pivot_go_breakout_2x'] == False)
     )
     
+    # NaN Control short conditions
     short_conditions = [
-        (df['close'].shift(i) > df['low_pivot_filled_2x']).fillna(False) 
+        ((df['low_pivot_filled_2x'].notna()) & 
+         (df['close'].shift(i) > df['low_pivot_filled_2x'])).fillna(False) 
         for i in range(1, 11)
     ]
     short_shift_condition = pd.concat(short_conditions, axis=1).all(axis=1)
@@ -318,7 +321,7 @@ def calculate_indicators(df, symbol):
         (df['low_structure_2x'] != 'LL') & 
         short_shift_condition & 
         (df['high_structure_2x'] == 'LH') & 
-        (df['low_pivot_filled_2x'].notna()) &  # 
+        (df['low_pivot_filled_2x'].notna()) & 
         (df['close'] < df['low_pivot_filled_2x']) & 
         (low_atr < df['pct_atr']) & 
         (df['pct_atr'] < high_atr) & 
