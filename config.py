@@ -11,12 +11,12 @@ BYBIT_API_SECRET = os.getenv("BYBIT_API_SECRET")
 SYMBOLS = ['BTCUSDT', 'ETHUSDT', "SOLUSDT",'XRPUSDT','DOGEUSDT']  # "SUIUSDT"
 INTERVAL = "15"  # (15m-'15', 1h-'60')
 
-# Percent ATR Ranges
-atr_ranges = {'SOLUSDT':  (0.423, 1.03), 
-              'BTCUSDT': (0.173, 0.57), 
-               'ETHUSDT':  (0.363, 0.87), 
-              'DOGEUSDT':  (0.465, 1.17), 
-              'XRPUSDT':  (0.363, 1.25),  
+# Percent ATR Ranges: atr.quantile(0.20 - 0.95)
+atr_ranges = {'SOLUSDT':  (0.423, 1.176), 
+              'BTCUSDT': (0.173, 0.645), 
+               'ETHUSDT':  (0.363, 0.990), 
+              'DOGEUSDT':  (0.465, 1.306), 
+              'XRPUSDT':  (0.363, 1.378),  
               }
 
 # Z: atr.quantile(0.25 - 0.75)
