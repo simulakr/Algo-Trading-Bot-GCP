@@ -295,7 +295,7 @@ class TradingBot:
                 symbol=symbol,
                 direction=signal,
                 entry_price=data['close'],
-                atr_value=data['atr'],
+                atr_value=data['z'],
                 pct_atr=data['pct_atr']
             )
     
