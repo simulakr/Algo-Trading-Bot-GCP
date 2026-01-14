@@ -281,7 +281,7 @@ class PositionManager:
                 # Yeni TP/SL hesapla
                 new_tp, new_sl = self.exit_strategy.calculate_levels(
                     current_data['close'],
-                    current_data['atr'],
+                    current_data['z'],
                     current_direction,
                     symbol
                 )
