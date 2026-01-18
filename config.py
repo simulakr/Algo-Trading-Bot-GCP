@@ -66,11 +66,11 @@ LEVERAGE = 25  # (max 25x)
 DEFAULT_LEVERAGE = 25
 
 SYMBOL_SETTINGS = {
-    'BTCUSDT': {'risk': 20.0, 'leverage': 25},
-    'ETHUSDT': {'risk': 20.0, 'leverage': 25},
-    'SOLUSDT': {'risk': 20.0, 'leverage': 25},
-    'XRPUSDT': {'risk': 20.0, 'leverage': 25},
-    'DOGEUSDT': {'risk': 20.0, 'leverage': 25}, # '1000PEPEUSDT': {'risk': 40.0, 'leverage': 20}
+    'BTCUSDT': {'risk': 30.0, 'leverage': 25},
+    'ETHUSDT': {'risk': 30.0, 'leverage': 25},
+    'SOLUSDT': {'risk': 30.0, 'leverage': 25},
+    'XRPUSDT': {'risk': 30.0, 'leverage': 25},
+    'DOGEUSDT': {'risk': 30.0, 'leverage': 25}, # '1000PEPEUSDT': {'risk': 40.0, 'leverage': 20}
 }
 
 # Trading Mode
