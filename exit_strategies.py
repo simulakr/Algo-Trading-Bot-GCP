@@ -11,10 +11,10 @@ class ExitStrategy:
     def calculate_levels(self, entry_price: float, atr_value: float, direction: str, symbol: str) -> Tuple[float, float]:
         """ATR değerine göre TP/SL seviyelerini hesaplar"""
         if direction == "LONG":
-            take_profit = entry_price + (3 * atr_value)  # 🟢 Direct ATR add
+            take_profit = entry_price + (4 * atr_value)  # 🟢 Direct ATR add
             stop_loss = entry_price - (3 * atr_value)
         else:
-            take_profit = entry_price - (3 * atr_value)
+            take_profit = entry_price - (4 * atr_value)
             stop_loss = entry_price + (3 * atr_value)
                 
         round_to = TP_ROUND_NUMBERS.get(symbol, 3)
