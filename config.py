@@ -21,7 +21,7 @@ atr_ranges = {'SOLUSDT':  (0.423, 1.176),
 
 # Z: atr.quantile(0.25 - 0.65)
 Z_RANGES = {
-    'BTCUSDT': (0.18, 0.309),
+    'BTCUSDT': (0.181, 0.309),
     'ETHUSDT': (0.324, 0.523),
     'SOLUSDT': (0.399, 0.622),
     'DOGEUSDT': (0.432, 0.698),
