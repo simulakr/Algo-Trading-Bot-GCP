@@ -19,13 +19,13 @@ atr_ranges = {'SOLUSDT':  (0.423, 1.176),
               'XRPUSDT':  (0.363, 1.378),  
               }
 
-# Z: atr.quantile(0.25 - 0.65)
+# Z: atr.quantile(0.35 - 0.65)
 Z_RANGES = {
-    'BTCUSDT': (0.181, 0.309),
-    'ETHUSDT': (0.324, 0.523),
-    'SOLUSDT': (0.399, 0.622),
-    'DOGEUSDT': (0.432, 0.698),
-    'XRPUSDT': (0.341, 0.604),
+    'BTCUSDT': (0.2109, 0.309),
+    'ETHUSDT': (0.372, 0.523),
+    'SOLUSDT': (0.451, 0.622),
+    'DOGEUSDT': (0.498, 0.698),
+    'XRPUSDT': (0.397, 0.604),
 }
 
 Z_INDICATOR_PARAMS = {
