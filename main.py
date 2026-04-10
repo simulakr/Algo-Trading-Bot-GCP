@@ -177,35 +177,32 @@ class TradingBot:
             return None
             
     def _is_weekend_trading_blocked(self) -> bool:
-        """
-        Türkiye saatiyle Cuma 23:59 - Pazar 23:59 arası işlem almayı engeller.
-        Bu aralıkta True döner (işlem yasak), dışında False döner.
-        """
         try:
             import pytz
             
             turkey_tz = pytz.timezone('Europe/Istanbul')
             
-            # Bybit sunucu zamanını al, Türkiye saatine çevir
             server_time = self.api.session.get_server_time()
             ts = int(server_time['result']['timeSecond'])
             utc_time = datetime.datetime.fromtimestamp(ts, tz=datetime.timezone.utc)
             turkey_time = utc_time.astimezone(turkey_tz)
             
-            weekday = turkey_time.weekday()  # 0=Pazartesi, 4=Cuma, 5=Cumartesi, 6=Pazar
+            weekday = turkey_time.weekday()
             hour = turkey_time.hour
             minute = turkey_time.minute
             
-            # Cuma 23:59'dan itibaren blokla
             if weekday == 4 and hour == 23 and minute >= 59:
                 logger.info(f"Hafta sonu bloğu aktif: Cuma {turkey_time.strftime('%H:%M')} (TR)")
                 return True
             
-            # Tüm Cumartesi- Pazar
             if weekday == 5 or weekday == 6:
-                logger.info(f"Hafta sonu bloğu aktif:  {turkey_time.strftime('%H:%M')} (TR)")
+                logger.info(f"Hafta sonu bloğu aktif: {turkey_time.strftime('%H:%M')} (TR)")
                 return True
             
+            return False
+            
+        except Exception as e:
+            logger.error(f"Hafta sonu kontrol hatası: {e}")
             return False
     
     def _wait_until_next_candle(self):
