@@ -63,14 +63,16 @@ class PositionManager:
             # ============================================
             
             # TP/SL seviyelerini hesapla
-            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
-            logger.info(f"{symbol} TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
+            tp1_price, tp2_price, sl_price = self.exit_strategy.calculate_levels(
+                entry_price, atr_value, direction, symbol
+            )
+            logger.info(f"{symbol} TP1: {tp1_price} | TP2: {tp2_price} | SL: {sl_price}")
             
-            # Limit TP/SL emirlerini gönder (YENİ)
             tp_sl_result = self.exit_strategy.set_limit_tp_sl(
                 symbol=symbol,
                 direction=direction,
-                tp_price=tp_price,
+                tp1_price=tp1_price,
+                tp2_price=tp2_price,
                 sl_price=sl_price,
                 quantity=quantity
             )
@@ -112,21 +114,21 @@ class PositionManager:
             # Eski TP/SL emirlerini iptal et
             if 'oco_pair' in position:
                 logger.info(f"{symbol} eski TP/SL emirleri iptal ediliyor...")
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
-            
-            # Yeni TP/SL seviyelerini hesapla
-            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
-            logger.info(f"{symbol} Yeni TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
-            
-            # Yeni limit TP/SL emirlerini gönder
-            tp_sl_result = self.exit_strategy.set_limit_tp_sl(
-                symbol=symbol,
-                direction=direction,
-                tp_price=tp_price,
-                sl_price=sl_price,
-                quantity=position['quantity']
-            )
+                # iptal kısmı
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp1_order_id'])
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp2_order_id'])
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl1_order_id'])
+                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl2_order_id'])
+                
+                # hesaplama
+                tp1_price, tp2_price, sl_price = self.exit_strategy.calculate_levels(...)
+                
+                # gönderme
+                tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+                    symbol=symbol, direction=direction,
+                    tp1_price=tp1_price, tp2_price=tp2_price,
+                    sl_price=sl_price, quantity=position['quantity']
+                )
             
             if tp_sl_result.get('success'):
                 # Pozisyon bilgilerini güncelle
@@ -161,8 +163,10 @@ class PositionManager:
             if 'oco_pair' in position:
                 logger.info(f"{symbol} TP/SL emirleri iptal ediliyor...")
                 try:
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
+                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp1_order_id'])
+                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp2_order_id'])
+                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl1_order_id'])
+                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl2_order_id'])
                 except Exception as e:
                     logger.warning(f"{symbol} TP/SL iptal hatası (zaten tetiklenmiş olabilir): {e}")
             
@@ -317,27 +321,30 @@ class PositionManager:
 
     def monitor_oco_orders(self):
         """
-        Tüm aktif pozisyonların OCO emirlerini kontrol eder
+        Tüm aktif pozisyonların OCO emirlerini kontrol eder.
+        TP1 kısmi tetiklenme durumunu yönetir.
         """
-        print(f"[DEBUG] monitor_oco_orders çalışıyor - Pozisyon sayısı: {len(self.active_positions)}")  # ← EKLE
-        
+        logger.debug(f"monitor_oco_orders çalışıyor - Pozisyon sayısı: {len(self.active_positions)}")
+    
         for symbol, position in list(self.active_positions.items()):
-            print(f"[DEBUG] {symbol} kontrol ediliyor...")  # ← EKLE
-            
             if 'oco_pair' not in position:
-                print(f"[DEBUG] {symbol} - oco_pair yok, atlandı")  # ← EKLE
+                logger.debug(f"{symbol} - oco_pair yok, atlandı")
                 continue
-                
+    
             oco_pair = position['oco_pair']
-            
+    
             if not oco_pair.get('active'):
-                print(f"[DEBUG] {symbol} - oco_pair aktif değil, atlandı")  # ← EKLE
+                logger.debug(f"{symbol} - oco_pair aktif değil, atlandı")
                 continue
-            
-            print(f"[DEBUG] {symbol} - check_and_cancel_oco çağrılıyor...")  # ← EKLE
+    
             result = self.exit_strategy.check_and_cancel_oco(oco_pair)
-            print(f"[DEBUG] {symbol} - Sonuç: {result}")  # ← EKLE
-            
-            if result.get('triggered'):
-                logger.info(f"{symbol} {result['triggered']} tetiklendi - Pozisyon otomatik kapatıldı")
+            logger.debug(f"{symbol} - OCO sonuç: {result}")
+    
+            if result.get('triggered') == 'TP1':
+                # Yarı pozisyon kapandı, devam ediyor
+                logger.info(f"{symbol} TP1 tetiklendi — yarı pozisyon kapandı, TP2/SL2 devam ediyor")
+                # active_positions'dan silmiyoruz, oco_pair içinde tp1_triggered=True zaten set edildi
+    
+            elif result.get('triggered') in ['TP2', 'SL1', 'SL2']:
+                logger.info(f"{symbol} {result['triggered']} tetiklendi — pozisyon tamamen kapandı")
                 del self.active_positions[symbol]
