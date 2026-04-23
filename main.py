@@ -7,6 +7,8 @@ from exchange import BybitFuturesAPI
 from indicators import calculate_indicators
 from entry_strategies import check_long_entry, check_short_entry
 from position_manager import PositionManager
+import pandas as pd
+
 
 # Log ayarları
 logging.basicConfig(
@@ -205,79 +207,56 @@ class TradingBot:
             logger.error(f"Hafta sonu kontrol hatası: {e}")
             return False
     
-    def _wait_until_next_candle(self):
-        """Bybit sunucu saati ile 15 dakikalık mum sonunu bekle - Saatin çeyreklerinden 1 saniye önce"""
+    def _wait_until_next_candle(self) -> None:
         try:
-            # Bybit sunucu zamanını al
-            server_time = self.api.session.get_server_time()
-            ts = int(server_time['result']['timeSecond']) * 1000  # Unix timestamp milisaniye
-            
-            # Mevcut zamanı datetime'a çevir
-            from datetime import datetime, timezone, timedelta
-            current_time = datetime.fromtimestamp(ts / 1000, timezone.utc)
-            
-            # Bir sonraki çeyrek dakikayı hesapla (XX:14, XX:29, XX:44, XX:59)
-            minute = current_time.minute
-            
-            if minute < 14:
-                target_minute = 14
-                target_hour = current_time.hour
-            elif minute < 29:
-                target_minute = 29
-                target_hour = current_time.hour
-            elif minute < 44:
-                target_minute = 44
-                target_hour = current_time.hour
-            elif minute < 59:
-                target_minute = 59
-                target_hour = current_time.hour
-            else:  # minute >= 59
-                # Bir sonraki saatin 14. dakikası
-                target_minute = 14
-                target_hour = current_time.hour + 1
-                # Saat 23'ten 0'a geçiş kontrolü
-                if target_hour >= 24:
-                    target_hour = 0
-            
-            # Target time'ı oluştur
-            target_time = current_time.replace(
-                hour=target_hour,
-                minute=target_minute, 
-                second=59, 
-                microsecond=0
+            server_ms   = self.client.get_server_time_ms()
+            current     = datetime.datetime.fromtimestamp(server_ms / 1000, tz=datetime.timezone.utc)
+            minute      = current.minute
+    
+            for target in [15, 30, 45, 0]:
+                if target == 0:
+                    target_time = current.replace(minute=0, second=2, microsecond=0) + datetime.timedelta(hours=1)
+                    break
+                if minute < target:
+                    target_time = current.replace(minute=target, second=2, microsecond=0)
+                    break
+    
+            if target_time <= current:
+                target_time += datetime.timedelta(hours=1)
+    
+            wait_seconds = (target_time - current).total_seconds()
+    
+            logger.info(
+                "Bekleniyor | Şu an: %s | Hedef: %s | Süre: %.1fs",
+                current.strftime("%H:%M:%S"),
+                target_time.strftime("%H:%M:%S"),
+                wait_seconds,
             )
-            
-            # Gün değişimi kontrolü (23:59 sonrası 00:14'e geçiş)
-            if target_hour == 0 and current_time.hour == 23:
-                target_time = target_time + timedelta(days=1)
-            
-            # Bekleme süresini hesapla
-            wait_seconds = (target_time.timestamp() - current_time.timestamp())
-            
-            # DEBUG log
-            logger.info(f"DEBUG: minute={minute}, target_minute={target_minute}, current={current_time.strftime('%H:%M:%S')}, target={target_time.strftime('%H:%M:%S')}, wait_seconds={wait_seconds:.2f}")
-            
-            # Güvenli bekleme (minimum 1 saniye)
+    
             if wait_seconds > 0:
                 time.sleep(wait_seconds)
             else:
-                logger.warning(f"UYARI: wait_seconds negatif ({wait_seconds:.2f}s)! 1 saniye bekleniyor...")
                 time.sleep(1)
-            
-            logger.info("Yeni mum başladı - Veriler çekiliyor...")
-            
-        except Exception as e:
-            logger.error(f"Zamanlama hatası: {e}")
-            time.sleep(60)  # Hata durumunda 1 dakika bekle
+    
+            logger.info("Yeni mum başladı — veriler çekiliyor")
+    
+        except Exception as exc:
+            logger.error("Zamanlama hatası: %s", exc)
+            time.sleep(60)
 
     def _get_market_data_batch(self) -> Dict[str, Optional[Dict]]:
-        """Tüm sembollerin verilerini tek seferde al"""
         all_data = self.api.get_multiple_ohlcv(self.symbols, self.interval)
+        now = pd.Timestamp.utcnow()
         results = {}
         
         for symbol, df in all_data.items():
             if df is not None and not df.empty:
                 try:
+                    df = df[df.index < now]  # kapanmamış mumu at
+                    if df.empty:
+                        logger.warning(f"{symbol} filtre sonrası veri kalmadı")
+                        results[symbol] = None
+                        continue
                     df = calculate_indicators(df, symbol)
                     results[symbol] = df.iloc[-1].to_dict()
                 except Exception as e:
