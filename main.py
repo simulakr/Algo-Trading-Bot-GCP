@@ -87,95 +87,100 @@ class TradingBot:
     
     def _find_tp_sl_orders(self, symbol: str, direction: str, quantity: float) -> Optional[Dict]:
         """
-        Belirli bir pozisyon için açık TP/SL emirlerini bulur ve OCO pair oluşturur
+        Bot restart sonrası mevcut TP/SL emirlerini bulur.
+        Yeni yapı: TP1, TP2, SL1, SL2 (her biri yarı miktar)
         """
         try:
-            # Açık emirleri çek
             orders = self.api.session.get_open_orders(
                 category='linear',
                 symbol=symbol
             )
-            
+    
             if orders['retCode'] != 0:
                 return None
-            
-            tp_order_id = None
-            sl_order_id = None
+    
             expected_side = "Sell" if direction == "LONG" else "Buy"
-            
-            # TP ve SL emirlerini bul
+            half_qty = round(quantity / 2, 8)
+            tolerance = half_qty * 0.05  # %5 tolerans
+    
+            tp_ids = []
+            sl_ids = []
+    
             for order in orders['result']['list']:
                 if order['side'] != expected_side:
                     continue
-                
+    
                 order_qty = float(order['qty'])
-                # Miktar eşleşmesi (küçük farkları tolere et)
-                if abs(order_qty - quantity) > quantity * 0.01:  # %1 tolerans
+    
+                # Yarı miktar eşleşmesi
+                if abs(order_qty - half_qty) > tolerance:
                     continue
-                
-                # Limit emir = TP
+    
+                # Limit emir → TP
                 if order['orderType'] == 'Limit' and order.get('reduceOnly'):
-                    tp_order_id = order['orderId']
-                
-                # Stop/Market emir = SL
+                    tp_ids.append(order['orderId'])
+    
+                # Stop-Market emir → SL
                 elif order['orderType'] == 'Market' and order.get('triggerPrice'):
-                    sl_order_id = order['orderId']
-            
-            # Her iki emir de bulunduysa OCO pair oluştur
-            if tp_order_id and sl_order_id:
-                return {
-                    'symbol': symbol,
-                    'tp_order_id': tp_order_id,
-                    'sl_order_id': sl_order_id,
-                    'active': True
-                }
+                    sl_ids.append(order['orderId'])
+    
+            # TP fiyatlarına göre sırala (TP1 daha yakın, TP2 daha uzak)
+            if len(tp_ids) == 2:
+                tp_orders = []
+                for tid in tp_ids:
+                    for o in orders['result']['list']:
+                        if o['orderId'] == tid:
+                            tp_orders.append((float(o['price']), tid))
+                tp_orders.sort(key=lambda x: x[0])
+    
+                if direction == "LONG":
+                    # LONG: TP1 daha düşük fiyat, TP2 daha yüksek
+                    tp1_id = tp_orders[0][1]
+                    tp2_id = tp_orders[1][1]
+                else:
+                    # SHORT: TP1 daha yüksek fiyat, TP2 daha düşük
+                    tp1_id = tp_orders[1][1]
+                    tp2_id = tp_orders[0][1]
             else:
-                logger.warning(f"{symbol} TP/SL emirleri eksik - TP: {tp_order_id}, SL: {sl_order_id}")
-                return None
-                
+                tp1_id = tp_ids[0] if len(tp_ids) > 0 else None
+                tp2_id = tp_ids[1] if len(tp_ids) > 1 else None
+    
+            sl1_id = sl_ids[0] if len(sl_ids) > 0 else None
+            sl2_id = sl_ids[1] if len(sl_ids) > 1 else None
+    
+            if tp1_id and tp2_id and sl1_id and sl2_id:
+                logger.info(f"{symbol} TP1/TP2/SL1/SL2 emirleri bulundu")
+                return {
+                    'symbol':        symbol,
+                    'tp1_order_id':  tp1_id,
+                    'tp2_order_id':  tp2_id,
+                    'sl1_order_id':  sl1_id,
+                    'sl2_order_id':  sl2_id,
+                    'tp1_triggered': False,
+                    'active':        True
+                }
+    
+            # TP1 zaten tetiklenmişse (restart sırasında) — TP2 + SL2 kaldı
+            if tp2_id and sl2_id and not tp1_id and not sl1_id:
+                logger.info(f"{symbol} TP1 zaten tetiklenmiş — TP2/SL2 bulundu")
+                return {
+                    'symbol':        symbol,
+                    'tp1_order_id':  None,
+                    'tp2_order_id':  tp2_id,
+                    'sl1_order_id':  None,
+                    'sl2_order_id':  sl2_id,
+                    'tp1_triggered': True,
+                    'active':        True
+                }
+    
+            logger.warning(
+                f"{symbol} emirler eksik — "
+                f"TP1: {tp1_id} | TP2: {tp2_id} | SL1: {sl1_id} | SL2: {sl2_id}"
+            )
+            return None
+    
         except Exception as e:
             logger.error(f"{symbol} TP/SL emirleri aranırken hata: {e}")
-            return None
-        """
-        Mevcut pozisyonun sadece TP/SL'sini günceller (Senaryo 2a)
-        """
-        try:
-            position = self.active_positions[symbol]
-            
-            # Eski TP/SL emirlerini iptal et
-            if 'oco_pair' in position:
-                logger.info(f"{symbol} eski TP/SL emirleri iptal ediliyor...")
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
-            
-            # Yeni TP/SL seviyelerini hesapla
-            tp_price, sl_price = self.exit_strategy.calculate_levels(entry_price, atr_value, direction, symbol)
-            logger.info(f"{symbol} Yeni TP/SL hesaplandı | TP: {tp_price} | SL: {sl_price}")
-            
-            # Yeni limit TP/SL emirlerini gönder
-            tp_sl_result = self.exit_strategy.set_limit_tp_sl(
-                symbol=symbol,
-                direction=direction,
-                tp_price=tp_price,
-                sl_price=sl_price,
-                quantity=position['quantity']
-            )
-            
-            if tp_sl_result.get('success'):
-                # Pozisyon bilgilerini güncelle
-                position['take_profit'] = tp_price
-                position['stop_loss'] = sl_price
-                position['current_pct_atr'] = pct_atr
-                position['oco_pair'] = tp_sl_result['oco_pair']
-                
-                logger.info(f"{symbol} TP/SL başarıyla güncellendi")
-                return position
-            else:
-                logger.error(f"{symbol} TP/SL güncellenemedi")
-                return None
-                
-        except Exception as e:
-            logger.error(f"{symbol} TP/SL güncelleme hatası: {str(e)}")
             return None
             
     def _is_weekend_trading_blocked(self) -> bool:
