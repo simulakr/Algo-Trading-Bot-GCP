@@ -7,181 +7,226 @@ import time
 
 logger = logging.getLogger(__name__)
 
+
 class PositionManager:
     def __init__(self, client: HTTP):
         self.client = client
         self.exit_strategy = ExitStrategy(client)
-        self.active_positions: Dict[str, Dict] = {}  # {symbol: position_data}
+        self.active_positions: Dict[str, Dict] = {}
         self.logger = logging.getLogger(__name__)
 
-    def open_position(self, symbol: str, direction: str, entry_price: float, atr_value: float, pct_atr: float) -> Optional[Dict]:
+    # ─── Ana Giriş Noktası ────────────────────────────────────────────────────
+
+    def open_position(
+        self,
+        symbol:      str,
+        direction:   str,
+        entry_price: float,
+        atr_value:   float,
+        pct_atr:     float,
+    ) -> Optional[Dict]:
         """
-        Yeni pozisyon açar ve limit TP/SL emirlerini yerleştirir (OCO mantığıyla)
+        Senaryo 1  → Pozisyon yok: yeni aç
+        Senaryo 2a → Aynı yön: TP/SL güncelle
+        Senaryo 2b → Ters yön: kapat + yeni aç
         """
         try:
-            # Eğer zaten pozisyon varsa kontrol et
             if symbol in self.active_positions:
                 existing_direction = self.active_positions[symbol]['direction']
-                
-                # Aynı yönde sinyal (Senaryo 2a)
-                if existing_direction == direction:
-                    logger.info(f"{symbol} zaten {direction} pozisyonda - TP/SL güncelleniyor")
-                    return self._update_tp_sl_only(symbol, direction, entry_price, atr_value, pct_atr)
-                
-                # Ters yönde sinyal (Senaryo 2b)
-                else:
-                    logger.info(f"{symbol} ters sinyal alındı ({existing_direction} → {direction}) - Pozisyon tersine dönüyor")
-                    self.close_position(symbol, "REVERSE_SIGNAL")
-                    # Devam et ve yeni pozisyon aç
-            
-            # Pozisyon büyüklüğünü hesapla
-            quantity = self._calculate_position_size(symbol, atr_value, entry_price)
-            logger.info(f"{symbol} {direction} pozisyon hesaplandı | Miktar: {quantity}")
-            
-            # Market emri ile pozisyon aç
-            order = self.client.place_order(
-                category="linear",
-                symbol=symbol,
-                side="Buy" if direction == "LONG" else "Sell",
-                orderType="Market",
-                qty=quantity,
-                reduceOnly=False
-            )
-    
-            if order['retCode'] != 0:
-                raise Exception(f"Pozisyon açma hatası: {order['retMsg']}")
-    
-            logger.info(f"{symbol} {direction} pozisyon açıldı | Miktar: {quantity} | Entry: {entry_price}")
 
-            # ⭐ POZİSYON DOĞRULAMA ⭐
-            # ============================================
-            time.sleep(1)  # ← YENİ: 1 saniye bekle (Bybit'in execute etmesi için)
-            
-            if not self._verify_position_opened(symbol, direction, float(quantity)):
-                logger.warning(f"{symbol} pozisyon doğrulanamadı, TP/SL ayarlanamayacak")
-                return None
-            # ============================================
-            
-            # TP/SL seviyelerini hesapla
+                if existing_direction == direction:
+                    logger.info(f"{symbol} zaten {direction} pozisyonda — TP/SL güncelleniyor")
+                    return self._update_tp_sl_only(symbol, direction, entry_price, atr_value, pct_atr)
+                else:
+                    logger.info(f"{symbol} ters sinyal ({existing_direction} → {direction}) — pozisyon kapatılıp yeni açılıyor")
+                    self.close_position(symbol, "REVERSE_SIGNAL")
+
+            return self._open_new_position(symbol, direction, entry_price, atr_value, pct_atr)
+
+        except Exception as e:
+            logger.error(f"{symbol} open_position hatası: {e}")
+            return None
+
+    # ─── Yeni Pozisyon ────────────────────────────────────────────────────────
+
+    def _open_new_position(
+        self,
+        symbol:      str,
+        direction:   str,
+        entry_price: float,
+        atr_value:   float,
+        pct_atr:     float,
+    ) -> Optional[Dict]:
+        quantity = self._calculate_position_size(symbol, atr_value, entry_price)
+
+        order = self.client.place_order(
+            category="linear",
+            symbol=symbol,
+            side="Buy" if direction == "LONG" else "Sell",
+            orderType="Market",
+            qty=quantity,
+            reduceOnly=False,
+        )
+
+        if order['retCode'] != 0:
+            logger.error(f"{symbol} market emri hatası: {order['retMsg']}")
+            return None
+
+        logger.info(f"{symbol} {direction} pozisyon açıldı | Miktar: {quantity} | Entry: {entry_price}")
+
+        time.sleep(1)
+        if not self._verify_position_opened(symbol, direction, float(quantity)):
+            logger.warning(f"{symbol} pozisyon doğrulanamadı — TP/SL ayarlanamayacak")
+            return None
+
+        tp1_price, tp2_price, sl_price = self.exit_strategy.calculate_levels(
+            entry_price, atr_value, direction, symbol
+        )
+        logger.info(f"{symbol} TP1: {tp1_price} | TP2: {tp2_price} | SL: {sl_price}")
+
+        tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+            symbol=symbol,
+            direction=direction,
+            tp1_price=tp1_price,
+            tp2_price=tp2_price,
+            sl_price=sl_price,
+            quantity=quantity,
+        )
+
+        if not tp_sl_result.get('success'):
+            logger.warning(f"{symbol} TP/SL ayarlanamadı — pozisyon kapatılıyor")
+            self._emergency_close(symbol, direction, float(quantity))
+            return None
+
+        position = {
+            'symbol':        symbol,
+            'direction':     direction,
+            'entry_price':   entry_price,
+            'quantity':      quantity,
+            'take_profit1':  tp1_price,
+            'take_profit2':  tp2_price,
+            'stop_loss':     sl_price,
+            'current_pct_atr': pct_atr,
+            'order_id':      order['result']['orderId'],
+            'oco_pair':      tp_sl_result['oco_pair'],
+        }
+        self.active_positions[symbol] = position
+        logger.info(f"{symbol} pozisyon kaydedildi | TP1: {tp1_price} | TP2: {tp2_price} | SL: {sl_price}")
+        return position
+
+    # ─── TP/SL Güncelleme ─────────────────────────────────────────────────────
+
+    def _update_tp_sl_only(
+        self,
+        symbol:      str,
+        direction:   str,
+        entry_price: float,
+        atr_value:   float,
+        pct_atr:     float,
+    ) -> Optional[Dict]:
+        """
+        Mevcut pozisyonun TP/SL'sini günceller.
+        TP1 zaten tetiklenmişse sadece yarı miktar için yeni emir gönderir.
+        """
+        try:
+            position  = self.active_positions[symbol]
+            oco_pair  = position.get('oco_pair', {})
+            tp1_done  = oco_pair.get('tp1_triggered', False)
+
+            # Mevcut emirleri iptal et
+            if oco_pair:
+                logger.info(f"{symbol} eski TP/SL emirleri iptal ediliyor...")
+                if not tp1_done:
+                    self.exit_strategy.cancel_order(symbol, oco_pair.get('tp1_order_id'))
+                    self.exit_strategy.cancel_order(symbol, oco_pair.get('sl1_order_id'))
+                self.exit_strategy.cancel_order(symbol, oco_pair.get('tp2_order_id'))
+                self.exit_strategy.cancel_order(symbol, oco_pair.get('sl2_order_id'))
+
             tp1_price, tp2_price, sl_price = self.exit_strategy.calculate_levels(
                 entry_price, atr_value, direction, symbol
             )
-            logger.info(f"{symbol} TP1: {tp1_price} | TP2: {tp2_price} | SL: {sl_price}")
-            
-            tp_sl_result = self.exit_strategy.set_limit_tp_sl(
-                symbol=symbol,
-                direction=direction,
-                tp1_price=tp1_price,
-                tp2_price=tp2_price,
-                sl_price=sl_price,
-                quantity=quantity
-            )
-    
-            if tp_sl_result.get('success'):
-                logger.info(f"{symbol} Limit TP/SL başarıyla ayarlandı")
-                
-                # Pozisyon bilgilerini kaydet (OCO pair dahil)
-                position = {
-                    'symbol': symbol,
-                    'direction': direction,
-                    'entry_price': entry_price,
-                    'quantity': quantity,
-                    'take_profit': tp_price,
-                    'stop_loss': sl_price,
-                    'current_pct_atr': pct_atr,
-                    'order_id': order['result']['orderId'],
-                    'oco_pair': tp_sl_result['oco_pair']  # YENİ: OCO tracking
-                }
-                self.active_positions[symbol] = position
-                return position
-            else:
-                logger.warning(f"{symbol} TP/SL ayarlanamadı - Pozisyon kapatılıyor")
-                self.close_position(symbol, "TP_SL_FAILED")
-                return None
-    
-        except Exception as e:
-            logger.error(f"{symbol} pozisyon açma hatası: {str(e)}")
-            return None
-    
-    
-    def _update_tp_sl_only(self, symbol: str, direction: str, entry_price: float, atr_value: float, pct_atr: float) -> Optional[Dict]:
-        """
-        Mevcut pozisyonun sadece TP/SL'sini günceller (Senaryo 2a)
-        """
-        try:
-            position = self.active_positions[symbol]
-            
-            # Eski TP/SL emirlerini iptal et
-            if 'oco_pair' in position:
-                logger.info(f"{symbol} eski TP/SL emirleri iptal ediliyor...")
-                # iptal kısmı
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp1_order_id'])
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp2_order_id'])
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl1_order_id'])
-                self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl2_order_id'])
-                
-                # hesaplama
-                tp1_price, tp2_price, sl_price = self.exit_strategy.calculate_levels(...)
-                
-                # gönderme
+            logger.info(f"{symbol} yeni TP1: {tp1_price} | TP2: {tp2_price} | SL: {sl_price}")
+
+            # TP1 tetiklenmişse sadece yarı miktar kaldı
+            if tp1_done:
+                half_qty = str(round(float(position['quantity']) / 2, 8)).rstrip('0').rstrip('.')
                 tp_sl_result = self.exit_strategy.set_limit_tp_sl(
-                    symbol=symbol, direction=direction,
-                    tp1_price=tp1_price, tp2_price=tp2_price,
-                    sl_price=sl_price, quantity=position['quantity']
+                    symbol=symbol,
+                    direction=direction,
+                    tp1_price=tp1_price,   # bu aslında yeni TP2 görevi görüyor
+                    tp2_price=tp2_price,   # kullanılmayacak ama imza için gerekli
+                    sl_price=sl_price,
+                    quantity=half_qty,
+                    half_only=True,        # sadece TP2+SL2 gönder
                 )
-            
-            if tp_sl_result.get('success'):
-                # Pozisyon bilgilerini güncelle
-                position['take_profit'] = tp_price
-                position['stop_loss'] = sl_price
-                position['current_pct_atr'] = pct_atr
-                position['oco_pair'] = tp_sl_result['oco_pair']
-                
-                logger.info(f"{symbol} TP/SL başarıyla güncellendi")
-                return position
             else:
+                tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+                    symbol=symbol,
+                    direction=direction,
+                    tp1_price=tp1_price,
+                    tp2_price=tp2_price,
+                    sl_price=sl_price,
+                    quantity=position['quantity'],
+                )
+
+            if not tp_sl_result.get('success'):
                 logger.error(f"{symbol} TP/SL güncellenemedi")
                 return None
-                
+
+            position.update({
+                'entry_price':     entry_price,
+                'take_profit1':    tp1_price,
+                'take_profit2':    tp2_price,
+                'stop_loss':       sl_price,
+                'current_pct_atr': pct_atr,
+                'oco_pair':        tp_sl_result['oco_pair'],
+            })
+            logger.info(f"{symbol} TP/SL güncellendi")
+            return position
+
         except Exception as e:
-            logger.error(f"{symbol} TP/SL güncelleme hatası: {str(e)}")
+            logger.error(f"{symbol} TP/SL güncelleme hatası: {e}")
             return None
-    
-    
+
+    # ─── Pozisyon Kapatma ─────────────────────────────────────────────────────
+
     def close_position(self, symbol: str, reason: str = "MANUAL") -> bool:
-        """
-        Pozisyonu kapatır ve TP/SL emirlerini iptal eder
-        """
+        """Pozisyonu market emriyle kapatır, tüm OCO emirlerini iptal eder."""
         try:
             if symbol not in self.active_positions:
                 logger.warning(f"{symbol} kapatılacak pozisyon bulunamadı")
                 return False
-            
+
             position = self.active_positions[symbol]
-            
-            # TP/SL emirlerini iptal et
-            if 'oco_pair' in position:
-                logger.info(f"{symbol} TP/SL emirleri iptal ediliyor...")
+            oco_pair = position.get('oco_pair', {})
+            tp1_done = oco_pair.get('tp1_triggered', False)
+
+            # Tüm açık emirleri iptal et
+            if oco_pair:
                 try:
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp1_order_id'])
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp2_order_id'])
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl1_order_id'])
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl2_order_id'])
+                    if not tp1_done:
+                        self.exit_strategy.cancel_order(symbol, oco_pair.get('tp1_order_id'))
+                        self.exit_strategy.cancel_order(symbol, oco_pair.get('sl1_order_id'))
+                    self.exit_strategy.cancel_order(symbol, oco_pair.get('tp2_order_id'))
+                    self.exit_strategy.cancel_order(symbol, oco_pair.get('sl2_order_id'))
                 except Exception as e:
                     logger.warning(f"{symbol} TP/SL iptal hatası (zaten tetiklenmiş olabilir): {e}")
-            
-            # Pozisyonu market ile kapat
+
+            # TP1 tetiklendiyse kalan miktar yarı
+            close_qty = position['quantity']
+            if tp1_done:
+                close_qty = str(round(float(position['quantity']) / 2, 8)).rstrip('0').rstrip('.')
+
             close_side = "Sell" if position['direction'] == "LONG" else "Buy"
-            
             order = self.client.place_order(
                 category="linear",
                 symbol=symbol,
                 side=close_side,
                 orderType="Market",
-                qty=position['quantity'],
-                reduceOnly=True
+                qty=close_qty,
+                reduceOnly=True,
             )
-            
+
             if order['retCode'] == 0:
                 logger.info(f"{symbol} pozisyon kapatıldı | Sebep: {reason}")
                 del self.active_positions[symbol]
@@ -189,162 +234,189 @@ class PositionManager:
             else:
                 logger.error(f"{symbol} pozisyon kapatma hatası: {order['retMsg']}")
                 return False
-                
+
         except Exception as e:
-            logger.error(f"{symbol} pozisyon kapatma hatası: {str(e)}")
+            logger.error(f"{symbol} pozisyon kapatma hatası: {e}")
             return False
 
-    def _verify_position_opened(self, symbol: str, direction: str, expected_qty: float) -> bool:
+    # ─── Pozisyon Yönetim Döngüsü ─────────────────────────────────────────────
+
+    def manage_positions(
+        self,
+        signals:  Dict[str, Optional[str]],
+        all_data: Dict[str, Optional[Dict]],
+    ) -> None:
         """
-        Pozisyonun gerçekten açıldığını doğrular (timing sorunu önleme)
-        Maksimum 5 saniye boyunca 0.5 saniye aralıklarla kontrol eder
+        Her mum sonunda çalışır:
+        1. OCO kontrolü (TP/SL tetiklenme)
+        2. Ters sinyal → kapat (yeni açılış main loop'ta)
+        3. Aynı yön sinyali → TP/SL güncelle
         """
-        try:
-            expected_side = 'Buy' if direction == 'LONG' else 'Sell'
-            
-            # Maksimum 10 deneme (10 x 0.5 saniye = 5 saniye)
-            for attempt in range(10):
-                positions = self.client.get_positions(
-                    category='linear',
-                    symbol=symbol
+        # 1. OCO kontrolü
+        self.monitor_oco_orders()
+
+        # 2-3. Sinyal bazlı kontroller
+        for symbol, position in list(self.active_positions.items()):
+            current_signal    = signals.get(symbol)
+            current_data      = all_data.get(symbol)
+            current_direction = position['direction']
+
+            if not current_signal:
+                continue
+
+            # Ters sinyal — sadece logla, kapatma main loop'ta open_position içinde olacak
+            if current_signal != current_direction:
+                logger.info(f"{symbol} ters sinyal ({current_direction} → {current_signal})")
+                continue
+
+            # Aynı yön sinyali → TP/SL güncelle
+            if current_data:
+                logger.info(f"{symbol} aynı yönde sinyal — TP/SL güncelleniyor")
+                oco_pair = position.get('oco_pair', {})
+                tp1_done = oco_pair.get('tp1_triggered', False)
+
+                new_tp1, new_tp2, new_sl = self.exit_strategy.calculate_levels(
+                    current_data['close'], current_data['z'], current_direction, symbol
                 )
-                
-                if positions['retCode'] == 0:
-                    for pos in positions['result']['list']:
-                        pos_size = float(pos.get('size', 0))
-                        pos_side = pos.get('side', '')
-                        
-                        # Pozisyon var mı ve doğru yönde mi?
-                        if pos_size > 0 and pos_side == expected_side:
-                            # Miktar uyuşuyor mu? (%5 tolerans)
-                            if abs(pos_size - expected_qty) < expected_qty * 0.05:
-                                logger.info(f"{symbol} pozisyon doğrulandı (deneme {attempt + 1}/10)")
-                                return True
-                
-                # 0.5 saniye bekle ve tekrar dene
-                time.sleep(0.5)
-            
-            # 5 saniye sonunda hala bulunamadı
-            logger.error(f"{symbol} pozisyon 5 saniye içinde doğrulanamadı")
-            return False
-            
-        except Exception as e:
-            logger.error(f"{symbol} pozisyon doğrulama hatası: {e}")
-            return False
-            
-    def _calculate_position_size(self, symbol: str, atr_value: float ,entry_price: float, sl_multiplier=3) -> str:
+
+                # Mevcut emirleri iptal et
+                if oco_pair:
+                    if not tp1_done:
+                        self.exit_strategy.cancel_order(symbol, oco_pair.get('tp1_order_id'))
+                        self.exit_strategy.cancel_order(symbol, oco_pair.get('sl1_order_id'))
+                    self.exit_strategy.cancel_order(symbol, oco_pair.get('tp2_order_id'))
+                    self.exit_strategy.cancel_order(symbol, oco_pair.get('sl2_order_id'))
+
+                # TP1 tetiklenmişse sadece yarı miktar için emir gönder
+                if tp1_done:
+                    half_qty = str(round(float(position['quantity']) / 2, 8)).rstrip('0').rstrip('.')
+                    tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+                        symbol=symbol,
+                        direction=current_direction,
+                        tp1_price=new_tp1,
+                        tp2_price=new_tp2,
+                        sl_price=new_sl,
+                        quantity=half_qty,
+                        half_only=True,
+                    )
+                else:
+                    tp_sl_result = self.exit_strategy.set_limit_tp_sl(
+                        symbol=symbol,
+                        direction=current_direction,
+                        tp1_price=new_tp1,
+                        tp2_price=new_tp2,
+                        sl_price=new_sl,
+                        quantity=position['quantity'],
+                    )
+
+                if tp_sl_result.get('success'):
+                    position.update({
+                        'entry_price':  current_data['close'],
+                        'take_profit1': new_tp1,
+                        'take_profit2': new_tp2,
+                        'stop_loss':    new_sl,
+                        'oco_pair':     tp_sl_result['oco_pair'],
+                    })
+                    logger.info(f"{symbol} TP/SL güncellendi | TP1: {new_tp1} | TP2: {new_tp2} | SL: {new_sl}")
+
+    # ─── OCO Takibi ───────────────────────────────────────────────────────────
+
+    def monitor_oco_orders(self) -> None:
         """
-        Sembol bazlı risk ve kaldıraç ayarlarına göre pozisyon büyüklüğü hesaplar
+        Tüm aktif pozisyonların OCO emirlerini kontrol eder.
+        TP1 kısmi tetiklenme durumunu yönetir.
         """
-        # Sembol ayarlarını al, yoksa default değerleri kullan
+        logger.debug(f"monitor_oco_orders çalışıyor — Pozisyon sayısı: {len(self.active_positions)}")
+
+        for symbol, position in list(self.active_positions.items()):
+            if 'oco_pair' not in position:
+                logger.debug(f"{symbol} — oco_pair yok, atlandı")
+                continue
+
+            oco_pair = position['oco_pair']
+
+            if not oco_pair.get('active'):
+                logger.debug(f"{symbol} — oco_pair aktif değil, atlandı")
+                continue
+
+            result = self.exit_strategy.check_and_cancel_oco(oco_pair)
+            logger.debug(f"{symbol} — OCO sonuç: {result}")
+
+            if result.get('triggered') == 'TP1':
+                # Yarı pozisyon kapandı, devam ediyor
+                # tp1_triggered=True zaten check_and_cancel_oco içinde set edildi
+                logger.info(f"{symbol} TP1 tetiklendi — yarı pozisyon kapandı, TP2/SL2 devam ediyor")
+
+            elif result.get('triggered') in ['TP2', 'SL1', 'SL2']:
+                logger.info(f"{symbol} {result['triggered']} tetiklendi — pozisyon tamamen kapandı")
+                del self.active_positions[symbol]
+
+    # ─── Yardımcılar ──────────────────────────────────────────────────────────
+
+    def _calculate_position_size(
+        self,
+        symbol:        str,
+        atr_value:     float,
+        entry_price:   float,
+        sl_multiplier: int = 3,
+    ) -> str:
         symbol_config = SYMBOL_SETTINGS.get(symbol, {})
-        risk_amount = symbol_config.get('risk', RISK_PER_TRADE_USDT)  # Fallback için
-        leverage = symbol_config.get('leverage', DEFAULT_LEVERAGE)
-        
-        # Pozisyon büyüklüğünü hesapla
+        risk_amount   = symbol_config.get('risk', RISK_PER_TRADE_USDT)
+        leverage      = symbol_config.get('leverage', DEFAULT_LEVERAGE)
+
         raw_quantity = risk_amount / (sl_multiplier * atr_value)
-        
-        # Sembole göre yuvarlama hassasiyeti
-        quantity = round(raw_quantity, ROUND_NUMBERS[symbol])
-        
+        quantity     = round(raw_quantity, ROUND_NUMBERS[symbol])
+
         self.logger.info(
             f"{symbol} pozisyon hesaplandı | "
             f"Risk: ${risk_amount} | Leverage: {leverage}x | "
             f"Entry: ${entry_price:.2f} | Quantity: {quantity}"
         )
-        
         return str(quantity)
-        
-    def manage_positions(self, signals: Dict[str, Optional[str]], all_data: Dict[str, Optional[Dict]]) -> None:
-        """
-        Tüm aktif pozisyonları yönetir
-        - OCO kontrolü yapar (TP/SL tetiklenmesi)
-        - Ters sinyal gelirse pozisyonu kapatır
-        - Aynı yönde sinyal gelirse TP/SL günceller
-        """
-        # 1. OCO kontrolü - TP/SL tetiklenmeleri (Senaryo 3)
-        self.monitor_oco_orders()
-        
-        # 2. Sinyal bazlı kontroller
-        for symbol, position in list(self.active_positions.items()):
-            current_signal = signals.get(symbol)
-            current_data = all_data.get(symbol)
-            current_direction = position['direction']
-            
-            # Ters sinyal geldi mi? (Senaryo 2b)
-            if current_signal and current_signal != current_direction:
-                logger.info(f"{symbol} ters sinyal alındı ({current_direction} → {current_signal})")
-                # open_position içinde zaten hallediliyor, buradan sadece kapatıyoruz
-                # Yeni pozisyon open_position'da açılacak
-                continue  # open_position çağrılacak main loop'ta
-            
-            # Aynı yönde sinyal + yeni data var mı? (Senaryo 2a - TP/SL güncelleme)
-            if current_signal and current_data and current_signal == current_direction:
-                logger.info(f"{symbol} aynı yönde sinyal - TP/SL güncelleniyor")
-                
-                # Yeni TP/SL hesapla
-                new_tp, new_sl = self.exit_strategy.calculate_levels(
-                    current_data['close'],
-                    current_data['z'],
-                    current_direction,
-                    symbol
-                )
-                
-                # Eski TP/SL'yi iptal et
-                if 'oco_pair' in position:
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['tp_order_id'])
-                    self.exit_strategy.cancel_order(symbol, position['oco_pair']['sl_order_id'])
-                
-                # Yeni TP/SL koy
-                tp_sl_result = self.exit_strategy.set_limit_tp_sl(
-                    symbol=symbol,
-                    direction=current_direction,
-                    tp_price=new_tp,
-                    sl_price=new_sl,
-                    quantity=position['quantity']
-                )
-                
-                if tp_sl_result.get('success'):
-                    # Pozisyonu güncelle
-                    position['entry_price'] = current_data['close']
-                    position['take_profit'] = new_tp
-                    position['stop_loss'] = new_sl
-                    position['oco_pair'] = tp_sl_result['oco_pair']
-                    logger.info(f"{symbol} TP/SL güncellendi | TP: {new_tp} | SL: {new_sl}")
 
+    def _verify_position_opened(
+        self,
+        symbol:       str,
+        direction:    str,
+        expected_qty: float,
+        timeout:      float = 5.0,
+    ) -> bool:
+        """Pozisyonun exchange'e yansımasını bekler. Maks 5 saniye, 0.5s aralıklarla."""
+        expected_side = 'Buy' if direction == 'LONG' else 'Sell'
+        attempts      = int(timeout / 0.5)
+
+        for attempt in range(attempts):
+            positions = self.client.get_positions(category='linear', symbol=symbol)
+            if positions['retCode'] == 0:
+                for pos in positions['result']['list']:
+                    pos_size = float(pos.get('size', 0))
+                    pos_side = pos.get('side', '')
+                    if pos_size > 0 and pos_side == expected_side:
+                        if abs(pos_size - expected_qty) < expected_qty * 0.05:
+                            logger.info(f"{symbol} pozisyon doğrulandı (deneme {attempt + 1}/{attempts})")
+                            return True
+            time.sleep(0.5)
+
+        logger.error(f"{symbol} pozisyon {timeout}s içinde doğrulanamadı")
+        return False
+
+    def _emergency_close(self, symbol: str, direction: str, quantity: float) -> None:
+        """TP/SL ayarlanamadığında pozisyonu acil kapatır."""
+        close_side = "Sell" if direction == "LONG" else "Buy"
+        self.client.place_order(
+            category="linear",
+            symbol=symbol,
+            side=close_side,
+            orderType="Market",
+            qty=str(quantity),
+            reduceOnly=True,
+        )
+        logger.warning(f"{symbol} acil kapatma yapıldı")
+
+    # ─── Sorgular ─────────────────────────────────────────────────────────────
 
     def get_active_position(self, symbol: str) -> Optional[Dict]:
         return self.active_positions.get(symbol)
 
     def has_active_position(self, symbol: str) -> bool:
         return symbol in self.active_positions
-
-    def monitor_oco_orders(self):
-        """
-        Tüm aktif pozisyonların OCO emirlerini kontrol eder.
-        TP1 kısmi tetiklenme durumunu yönetir.
-        """
-        logger.debug(f"monitor_oco_orders çalışıyor - Pozisyon sayısı: {len(self.active_positions)}")
-    
-        for symbol, position in list(self.active_positions.items()):
-            if 'oco_pair' not in position:
-                logger.debug(f"{symbol} - oco_pair yok, atlandı")
-                continue
-    
-            oco_pair = position['oco_pair']
-    
-            if not oco_pair.get('active'):
-                logger.debug(f"{symbol} - oco_pair aktif değil, atlandı")
-                continue
-    
-            result = self.exit_strategy.check_and_cancel_oco(oco_pair)
-            logger.debug(f"{symbol} - OCO sonuç: {result}")
-    
-            if result.get('triggered') == 'TP1':
-                # Yarı pozisyon kapandı, devam ediyor
-                logger.info(f"{symbol} TP1 tetiklendi — yarı pozisyon kapandı, TP2/SL2 devam ediyor")
-                # active_positions'dan silmiyoruz, oco_pair içinde tp1_triggered=True zaten set edildi
-    
-            elif result.get('triggered') in ['TP2', 'SL1', 'SL2']:
-                logger.info(f"{symbol} {result['triggered']} tetiklendi — pozisyon tamamen kapandı")
-                del self.active_positions[symbol]
