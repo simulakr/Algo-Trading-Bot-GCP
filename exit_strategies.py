@@ -1,7 +1,7 @@
 from pybit.unified_trading import HTTP
 from typing import Dict, Optional, Tuple
 import logging
-from config import TP_ROUND_NUMBERS
+from config import TP_ROUND_NUMBERS, TP1, TP2, SL
 
 logger = logging.getLogger(__name__)
 
@@ -27,13 +27,13 @@ class ExitStrategy:
         round_to = TP_ROUND_NUMBERS.get(symbol, 3)
 
         if direction == "LONG":
-            tp1 = round(entry_price + (3 * atr_value), round_to)
-            tp2 = round(entry_price + (6 * atr_value), round_to)
-            sl  = round(entry_price - (3 * atr_value), round_to)
+            tp1 = round(entry_price + (TP1 * atr_value), round_to)
+            tp2 = round(entry_price + (TP2 * atr_value), round_to)
+            sl  = round(entry_price - (SL * atr_value), round_to)
         else:
-            tp1 = round(entry_price - (3 * atr_value), round_to)
-            tp2 = round(entry_price - (6 * atr_value), round_to)
-            sl  = round(entry_price + (3 * atr_value), round_to)
+            tp1 = round(entry_price - (TP1 * atr_value), round_to)
+            tp2 = round(entry_price - (TP2 * atr_value), round_to)
+            sl  = round(entry_price + (SL * atr_value), round_to)
 
         return tp1, tp2, sl
 
