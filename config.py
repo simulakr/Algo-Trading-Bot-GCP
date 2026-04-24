@@ -73,5 +73,9 @@ SYMBOL_SETTINGS = {
     'DOGEUSDT': {'risk': 10.0, 'leverage': 25}, # '1000PEPEUSDT': {'risk': 40.0, 'leverage': 20}
 }
 
+TP1 = 3
+TP2 = 6
+SL = 3
+
 # Trading Mode
 POSITION_MODE = "Hedge"  # default : OneWay (Hedge mode long/short)
