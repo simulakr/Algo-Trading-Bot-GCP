@@ -2,7 +2,7 @@ from typing import Dict, Optional, Any
 from pybit.unified_trading import HTTP
 from exit_strategies import ExitStrategy
 import logging
-from config import LEVERAGE, RISK_PER_TRADE_USDT, ROUND_NUMBERS, DEFAULT_LEVERAGE, SYMBOL_SETTINGS
+from config import LEVERAGE, RISK_PER_TRADE_USDT, ROUND_NUMBERS, DEFAULT_LEVERAGE, SYMBOL_SETTINGS, SL
 import time
 
 logger = logging.getLogger(__name__)
@@ -358,7 +358,7 @@ class PositionManager:
         symbol:        str,
         atr_value:     float,
         entry_price:   float,
-        sl_multiplier: int = 3,
+        sl_multiplier: int = SL,
     ) -> str:
         symbol_config = SYMBOL_SETTINGS.get(symbol, {})
         risk_amount   = symbol_config.get('risk', RISK_PER_TRADE_USDT)
