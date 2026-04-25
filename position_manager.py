@@ -363,10 +363,15 @@ class PositionManager:
         symbol_config = SYMBOL_SETTINGS.get(symbol, {})
         risk_amount   = symbol_config.get('risk', RISK_PER_TRADE_USDT)
         leverage      = symbol_config.get('leverage', DEFAULT_LEVERAGE)
-
+        precision     = ROUND_NUMBERS[symbol]
+    
         raw_quantity = risk_amount / (sl_multiplier * atr_value)
-        quantity     = round(raw_quantity, ROUND_NUMBERS[symbol])
-
+    
+        # Yarıya tam bölünebilmesi için 2x min_unit'in katına indir
+        min_unit     = 10 ** (-precision)
+        raw_quantity = (raw_quantity // (2 * min_unit)) * (2 * min_unit)
+        quantity     = round(raw_quantity, precision)
+    
         self.logger.info(
             f"{symbol} pozisyon hesaplandı | "
             f"Risk: ${risk_amount} | Leverage: {leverage}x | "
