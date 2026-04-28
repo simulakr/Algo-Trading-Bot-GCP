@@ -231,10 +231,10 @@ class TradingBot:
 
             for target in [15, 30, 45, 0]:
                 if target == 0:
-                    target_time = current.replace(minute=0, second=0, microsecond=400000) + datetime.timedelta(hours=1)
+                    target_time = current.replace(minute=0, second=0, microsecond=500000) + datetime.timedelta(hours=1)
                     break
                 if minute < target:
-                    target_time = current.replace(minute=target, second=0, microsecond=400000)
+                    target_time = current.replace(minute=target, second=0, microsecond=500000)
                     break
 
             if target_time <= current:
