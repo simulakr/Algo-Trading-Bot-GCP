@@ -187,12 +187,13 @@ def calculate_indicators(df, symbol):
     high_atr = atr_ranges[symbol][1]
     
     # NaN Control long conditions
-    long_conditions = [
-        ((df['high_pivot_filled_2x'].notna()) & 
-         (df['close'].shift(i) < long_break_condition)).fillna(False) 
-        for i in range(1, 6)
-    ]
-    long_shift_condition = pd.concat(long_conditions, axis=1).all(axis=1)
+    long_shift_condition = pd.Series(True, index=df.index)
+    for i in range(1, 6):
+        long_shift_condition &= (df['close'].shift(i) < long_break_condition)
+    
+    short_shift_condition = pd.Series(True, index=df.index)
+    for i in range(1, 6):
+        short_shift_condition &= (df['close'].shift(i) > short_break_condition)
     
     second_long_condition = (
         (df['low_structure_2x'] == 'HL') & 
@@ -203,15 +204,7 @@ def calculate_indicators(df, symbol):
         (low_atr < df['pct_atr']) & 
         (df['pct_atr'] < high_atr) & 
         (df['pivot_go_breakout_2x'] == False)
-    )
-    
-    # NaN Control short conditions
-    short_conditions = [
-        ((df['low_pivot_filled_2x'].notna()) & 
-         (df['close'].shift(i) > short_break_condition)).fillna(False) 
-        for i in range(1, 6)
-    ]
-    short_shift_condition = pd.concat(short_conditions, axis=1).all(axis=1)
+    )   
     
     second_short_condition = (
         (df['low_structure_2x'] != 'LL') & 
